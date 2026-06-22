@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structs em C — Programação Estruturada</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   TEMA: BOLD SIGNAL — versão datashow
+   Fontes aumentadas para projeção
+   ============================================ */
+:root {
+  --bg-primary:    #1a1a1a;
+  --bg-gradient:   linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+  --card-orange:   #FF5722;
+  --text-primary:  #ffffff;
+  --text-muted:    rgba(255,255,255,0.55);
+  --text-on-card:  #1a1a1a;
+  --grid-line:     rgba(255,255,255,0.04);
+  --code-bg:       #0d0d0d;
+  --code-border:   rgba(255,87,34,0.3);
+  --font-display:  'Archivo Black', sans-serif;
+  --font-body:     'Space Grotesk', sans-serif;
+  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  width:100%; height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family: var(--font-body);
+}
+
+.deck-viewport { position:fixed; inset:0; overflow:hidden; background:#000; }
+
+.deck-stage {
+  position:absolute; left:0; top:0;
+  width:1920px; height:1080px;
+  overflow:hidden; transform-origin:0 0;
+  background: var(--bg-primary);
+}
+
+.slide {
+  position:absolute; inset:0;
+  width:1920px; height:1080px;
+  overflow:hidden; display:block;
+  visibility:hidden; opacity:0;
+  pointer-events:none;
+  background: var(--bg-gradient);
+}
+
+.slide.active, .slide.visible {
+  visibility:visible; opacity:1;
+  pointer-events:auto; z-index:1;
+}
+
+img, video, canvas, svg { max-width:100%; max-height:100%; }
+
+/* Grade de fundo */
+.slide::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:60px 60px; pointer-events:none;
+}
+
+/* Controles externos */
+.deck-controls {
+  position:fixed; left:50%; bottom:22px;
+  transform:translateX(-50%);
+  z-index:1000; display:flex; align-items:center; gap:12px;
+}
+.deck-controls button {
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  color:#fff; font-family:var(--font-body);
+  font-size:14px; padding:7px 18px;
+  border-radius:999px; cursor:pointer; transition:background .2s;
+}
+.deck-controls button:hover { background:rgba(255,87,34,0.4); }
+.slide-counter {
+  color:rgba(255,255,255,0.5);
+  font-family:var(--font-body); font-size:14px;
+  min-width:60px; text-align:center;
+}
+
+/* ============================================
+   ANIMAÇÕES
+   ============================================ */
+.reveal {
+  opacity:0; transform:translateY(40px);
+  transition: opacity .65s var(--ease-expo), transform .65s var(--ease-expo);
+}
+.slide.visible .reveal { opacity:1; transform:translateY(0); }
+.reveal-left {
+  opacity:0; transform:translateX(-60px);
+  transition: opacity .65s var(--ease-expo), transform .65s var(--ease-expo);
+}
+.slide.visible .reveal-left { opacity:1; transform:translateX(0); }
+
+.d1{transition-delay:.08s} .d2{transition-delay:.18s} .d3{transition-delay:.28s}
+.d4{transition-delay:.38s} .d5{transition-delay:.48s} .d6{transition-delay:.58s}
+.d7{transition-delay:.68s} .d8{transition-delay:.78s}
+
+/* ============================================
+   COMPONENTES GLOBAIS — tamanhos datashow
+   ============================================ */
+.slide-num {
+  position:absolute; top:48px; left:72px;
+  font-family:var(--font-display); font-size:20px;
+  letter-spacing:0.12em; color:var(--text-muted);
+}
+.slide-label {
+  position:absolute; top:48px; right:72px;
+  font-family:var(--font-body); font-size:20px;
+  color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase;
+}
+.section-tag {
+  display:inline-block;
+  font-family:var(--font-body); font-size:20px;
+  font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--card-orange); margin-bottom:18px;
+}
+.card-orange { background:var(--card-orange); border-radius:16px; color:var(--text-on-card); }
+
+/* Código — fonte maior para datashow */
+.code-wrap {
+  background:var(--code-bg);
+  border:1px solid var(--code-border);
+  border-radius:12px; padding:26px 34px;
+  font-family:'Courier New', Courier, monospace;
+  font-size:24px; line-height:1.3; color:#e0e0e0; position:relative;
+  white-space:pre; tab-size:4;
+}
+.code-wrap::before {
+  content:attr(data-lang);
+  position:absolute; top:12px; right:20px;
+  font-size:14px; font-family:var(--font-body);
+  color:rgba(255,87,34,0.6); letter-spacing:.1em; text-transform:uppercase;
+}
+.kw   { color:#FF9800; font-weight:bold; }
+.cm   { color:#546E7A; font-style:italic; }
+.str  { color:#A5D6A7; }
+.num  { color:#80DEEA; }
+.fn   { color:#CE93D8; }
+.field{ color:#FFD54F; }
+.hl   { background:rgba(255,87,34,0.18); border-radius:4px; padding:0 4px; }
+.bad  { color:#EF5350; }
+
+.analogy-tag {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(255,87,34,0.15); border:1px solid rgba(255,87,34,0.35);
+  border-radius:999px; padding:8px 20px;
+  font-size:19px; font-weight:600; color:var(--card-orange);
+  text-transform:uppercase; letter-spacing:.1em; margin-bottom:18px;
+}
+
+.bullet-item { display:flex; align-items:flex-start; gap:20px; margin-bottom:18px; }
+.bullet-dot {
+  width:12px; height:12px; border-radius:50%;
+  background:var(--card-orange); flex-shrink:0; margin-top:16px;
+}
+/* DATASHOW: bullets maiores */
+.bullet-text { font-size:30px; line-height:1.4; color:var(--text-primary); }
+.bullet-sub  { font-size:22px; color:var(--text-muted); margin-top:4px; }
+
+.accent-line {
+  width:80px; height:5px; background:var(--card-orange);
+  border-radius:999px; margin-bottom:24px;
+}
+.highlight-box {
+  background:rgba(255,87,34,0.12); border-left:5px solid var(--card-orange);
+  border-radius:0 12px 12px 0; padding:20px 28px;
+  font-size:27px; line-height:1.5; color:var(--text-primary);
+}
+.compare-label {
+  font-size:19px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; margin-bottom:10px;
+}
+.label-bad  { color:#EF5350; }
+.label-good { color:#66BB6A; }
+
+/* ============================================
+   SLIDE 1 — CAPA
+   ============================================ */
+.title-slide { background: var(--bg-gradient); }
+.title-slide .big-number {
+  position:absolute; bottom:72px; left:72px;
+  font-family:var(--font-display); font-size:220px; line-height:1;
+  color:rgba(255,255,255,0.04); user-select:none;
+}
+.title-slide .tag-line {
+  position:absolute; top:52px; left:72px;
+  font-family:var(--font-body); font-size:20px;
+  color:var(--text-muted); letter-spacing:.12em; text-transform:uppercase;
+}
+.title-slide .hero-card {
+  position:absolute; top:150px; left:72px; width:860px;
+  background:var(--card-orange); border-radius:20px; padding:52px 60px;
+}
+.title-slide .hero-card h1 {
+  font-family:var(--font-display); font-size:108px; line-height:1;
+  color:#1a1a1a; margin-bottom:22px;
+}
+.title-slide .hero-card p {
+  font-size:28px; font-weight:500; color:rgba(26,26,26,0.72); line-height:1.4;
+}
+.title-slide .right-info {
+  position:absolute; right:100px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:32px;
+}
+.title-slide .info-pill {
+  background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px; padding:22px 32px; font-size:23px; color:var(--text-primary); line-height:1.5;
+}
+.title-slide .info-pill strong {
+  display:block; font-family:var(--font-display); font-size:17px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--card-orange); margin-bottom:8px;
+}
+
+/* ============================================
+   LAYOUTS GENÉRICOS DE CONTEÚDO
+   ============================================ */
+.two-col {
+  position:absolute; top:128px; left:72px; right:72px;
+  display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start;
+}
+.two-col h2 {
+  font-family:var(--font-display); font-size:66px; color:#fff; margin-bottom:18px;
+}
+.full-col {
+  position:absolute; top:128px; left:72px; right:72px;
+}
+.full-col h2 {
+  font-family:var(--font-display); font-size:66px; color:#fff; margin-bottom:18px;
+}
+
+/* Ficha de aluno */
+.ficha-card {
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+  border-radius:16px; padding:32px 40px;
+}
+.ficha-row {
+  display:flex; align-items:baseline; gap:16px; padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,0.08); font-size:25px;
+}
+.ficha-row:last-child { border-bottom:none; }
+.ficha-label { color:var(--text-muted); min-width:180px; font-size:22px; }
+.ficha-value { color:#fff; font-weight:500; }
+.ficha-type {
+  margin-left:auto; font-family:'Courier New', monospace;
+  font-size:20px; color:var(--card-orange);
+  background:rgba(255,87,34,0.12); padding:3px 12px; border-radius:6px;
+}
+
+/* Memória */
+.mem-block {
+  background:#0d0d0d; border:1px solid rgba(255,87,34,0.3);
+  border-radius:12px; overflow:hidden;
+}
+.mem-header {
+  background:rgba(255,87,34,0.2); padding:12px 22px; font-size:18px;
+  font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--card-orange);
+}
+.mem-row-item {
+  display:flex; align-items:center;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  font-family:'Courier New', monospace;
+}
+.mem-row-item:last-child { border-bottom:none; }
+.mem-offset { min-width:90px; padding:14px 18px; font-size:20px; color:#546E7A; }
+.mem-field  { flex:1; padding:14px 18px; font-size:22px; color:#FFD54F; }
+.mem-bytes  { padding:14px 18px; font-size:20px; color:var(--card-orange); }
+.mem-val    { padding:14px 18px; font-size:20px; color:#A5D6A7; }
+
+/* sizeof */
+.sizeof-card {
+  background:rgba(255,87,34,0.12); border:1px solid rgba(255,87,34,0.35);
+  border-radius:16px; padding:28px 36px; margin-top:20px;
+}
+.sizeof-row {
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding:13px 0; border-bottom:1px solid rgba(255,255,255,0.07);
+  font-family:'Courier New', monospace; font-size:24px;
+}
+.sizeof-row:last-child { border-bottom:none; }
+.sizeof-name { color:#FFD54F; }
+.sizeof-val  { color:var(--card-orange); font-weight:bold; }
+
+/* boas práticas */
+.practices-grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px; margin-top:24px;
+}
+.practice-card {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px; padding:26px 28px;
+}
+.practice-icon { font-size:38px; margin-bottom:10px; }
+.practice-title {
+  font-family:var(--font-display); font-size:22px; color:var(--card-orange);
+  margin-bottom:10px; text-transform:uppercase; letter-spacing:.06em;
+}
+.practice-text { font-size:21px; line-height:1.5; color:rgba(255,255,255,0.75); }
+
+/* slide fim */
+.slide-fim .bottom-card {
+  position:absolute; bottom:72px; left:72px; right:72px;
+  background:var(--card-orange); border-radius:20px; padding:44px 60px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.slide-fim .bottom-card h2 {
+  font-family:var(--font-display); font-size:62px; color:#1a1a1a; line-height:1.05;
+}
+.slide-fim .bottom-card p {
+  font-size:25px; color:rgba(26,26,26,0.7); max-width:520px; line-height:1.5;
+}
+.slide-fim .big-struct {
+  position:absolute; top:80px; left:72px;
+  font-family:var(--font-display); font-size:200px; line-height:1;
+  color:rgba(255,255,255,0.035); user-select:none; letter-spacing:-.02em;
+}
+.slide-fim .summary-list {
+  position:absolute; top:110px; right:72px;
+  display:flex; flex-direction:column; gap:16px;
+}
+.sum-item { display:flex; align-items:center; gap:18px; font-size:25px; color:rgba(255,255,255,0.8); }
+.sum-dot {
+  width:40px; height:40px; border-radius:50%; background:var(--card-orange);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-size:15px; color:#1a1a1a; flex-shrink:0;
+}
+
+/* Edit mode */
+.edit-hotzone { position:fixed; top:0; left:0; width:80px; height:80px; z-index:10000; cursor:pointer; }
+.edit-toggle {
+  position:fixed; top:18px; left:18px; z-index:10001;
+  background:rgba(255,87,34,0.85); border:none; color:#fff; border-radius:50%;
+  width:42px; height:42px; font-size:18px; cursor:pointer;
+  opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.edit-toggle.show, .edit-toggle.active { opacity:1; pointer-events:auto; }
+
+@media (prefers-reduced-motion:reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.2s !important; }
+}
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- =============================================
+     SLIDE 01 — CAPA
+     ============================================= -->
+<section class="slide title-slide active" aria-label="Capa">
+  <div class="tag-line reveal d1">Programação Estruturada em C</div>
+  <div class="big-number">C</div>
+
+  <div class="hero-card reveal d2">
+    <h1>Structs<br>em C</h1>
+    <p>Agrupando dados do mundo real<br>em um único tipo composto</p>
+  </div>
+
+  <div class="right-info">
+    <div class="info-pill reveal d3">
+      <strong>Conteúdo</strong>
+      O problema · Definição · Sintaxe<br>
+      typedef · Inicialização · Memória
+    </div>
+    <div class="info-pill reveal d4">
+      <strong>Pré-requisito</strong>
+      Variáveis · Tipos de dados<br>
+      Funções · Vetores · Arrays
+    </div>
+    <div class="info-pill reveal d5">
+      <strong>Aplicações</strong>
+      Cadastros · Jogos · Bancos<br>
+      Sistemas de gestão
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 02 — O PROBLEMA: ANTES DA STRUCT
+     ============================================= -->
+<section class="slide" aria-label="O problema antes das structs">
+  <div class="slide-num reveal d1">02</div>
+  <div class="slide-label reveal d1">Motivação</div>
+
+  <div class="two-col">
+    <div>
+      <div class="analogy-tag reveal d1">😰 O problema</div>
+      <h2 class="reveal d2">Como se fazia<br>antes das structs</h2>
+      <div class="accent-line reveal d3"></div>
+
+      <div class="reveal d4">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Arrays paralelos — um por campo</div>
+            <div class="bullet-sub">nomes[], matriculas[], notas[] — todos no mesmo índice <code style="color:var(--card-orange)">i</code></div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">O índice vira a "cola" entre os dados</div>
+            <div class="bullet-sub">aluno 0 → nomes[0], matriculas[0], notas[0]</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Qualquer erro de índice = desastre</div>
+            <div class="bullet-sub">deletar o aluno 3 exige remover em <em>todos</em> os arrays</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Passar para função = 4 parâmetros</div>
+            <div class="bullet-sub">função que imprime precisa dos 4 arrays + N</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C — SEM struct"><span class="cm">/* Dados de 40 alunos — jeito antigo */</span>
+<span class="kw">#define</span> N <span class="num">40</span>
+
+<span class="kw">char</span>  <span class="field">nomes</span>[N][<span class="num">40</span>];
+<span class="kw">int</span>   <span class="field">matriculas</span>[N];
+<span class="kw">float</span> <span class="field">notas</span>[N];
+<span class="kw">int</span>   <span class="field">faltas</span>[N];
+
+<span class="cm">/* Preencher aluno i */</span>
+<span class="fn">scanf</span>(<span class="str">"%s"</span>,  <span class="field">nomes</span>[i]);
+<span class="fn">scanf</span>(<span class="str">"%d"</span>, &<span class="field">matriculas</span>[i]);
+<span class="fn">scanf</span>(<span class="str">"%f"</span>, &<span class="field">notas</span>[i]);
+<span class="fn">scanf</span>(<span class="str">"%d"</span>, &<span class="field">faltas</span>[i]);
+
+<span class="cm">/* Imprimir aluno i */</span>
+<span class="fn">printf</span>(<span class="str">"%d"</span>,  <span class="field">matriculas</span>[i]);
+<span class="fn">printf</span>(<span class="str">"%s"</span>,  <span class="field">nomes</span>[i]);
+<span class="fn">printf</span>(<span class="str">"%.1f"</span>, <span class="field">notas</span>[i]);
+<span class="fn">printf</span>(<span class="str">"%d"</span>,  <span class="field">faltas</span>[i]);
+</div>
+      <div class="highlight-box reveal d5" style="margin-top:20px; font-size:24px;">
+        ❌ Se i ficar errado, todos os campos ficam <strong>descasados</strong>.<br>
+        E ainda temos 4 arrays para manter sincronizados.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 03 — COMPARAÇÃO LADO A LADO
+     ============================================= -->
+<section class="slide" aria-label="Comparação antes e depois">
+  <div class="slide-num reveal d1">03</div>
+  <div class="slide-label reveal d1">Motivação</div>
+
+  <div class="full-col">
+    <div class="section-tag reveal d1">Antes vs Depois</div>
+    <h2 class="reveal d2">Arrays paralelos  →  struct</h2>
+    <div class="accent-line reveal d3"></div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px;" class="reveal d4">
+      <div>
+        <div class="compare-label label-bad">❌ Antes — arrays paralelos</div>
+        <div class="code-wrap" data-lang="C" style="font-size:24px;"><span class="cm">/* 4 arrays, 1 índice por aluno */</span>
+<span class="kw">char</span>  nomes[<span class="num">40</span>][<span class="num">40</span>];
+<span class="kw">int</span>   matriculas[<span class="num">40</span>];
+<span class="kw">float</span> notas[<span class="num">40</span>];
+<span class="kw">int</span>   faltas[<span class="num">40</span>];
+
+<span class="cm">/* passar para função: */</span>
+<span class="kw">void</span> <span class="fn">imprimir</span>(
+    <span class="kw">char</span>  nomes[][<span class="num">40</span>],
+    <span class="kw">int</span>   matriculas[],
+    <span class="kw">float</span> notas[],
+    <span class="kw">int</span>   faltas[],
+    <span class="kw">int</span>   n
+);
+</div>
+      </div>
+      <div>
+        <div class="compare-label label-good">✅ Depois — com struct</div>
+        <div class="code-wrap" data-lang="C" style="font-size:24px;"><span class="cm">/* 1 tipo, tudo junto */</span>
+<span class="kw">typedef struct</span> {
+    <span class="kw">int</span>   matricula;
+    <span class="kw">char</span>  nome[<span class="num">40</span>];
+    <span class="kw">float</span> nota;
+    <span class="kw">int</span>   faltas;
+} Aluno;
+
+Aluno turma[<span class="num">40</span>];
+
+<span class="cm">/* passar para função: */</span>
+<span class="kw">void</span> <span class="fn">imprimir</span>(
+    Aluno turma[],
+    <span class="kw">int</span>   n
+);
+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 04 — ANALOGIA: FICHA CADASTRAL
+     ============================================= -->
+<section class="slide" aria-label="Analogia - Ficha Cadastral">
+  <div class="slide-num reveal d1">04</div>
+  <div class="slide-label reveal d1">O que é struct?</div>
+
+  <div class="two-col">
+    <div>
+      <div class="analogy-tag reveal d1">🗂️ Analogia</div>
+      <h2 class="reveal d2">Pense em<br>uma ficha<br>cadastral</h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="highlight-box reveal d4">
+        Toda ficha reúne <strong>dados diferentes</strong> sobre
+        <em>um mesmo sujeito</em>.<br>
+        Uma struct faz exatamente isso em C.
+      </div>
+      <div style="margin-top:26px" class="reveal d5">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Sem struct → múltiplos arrays paralelos</div>
+            <div class="bullet-sub">nomes[], matriculas[], notas[], faltas[]…</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Com struct → 1 variável organizada</div>
+            <div class="bullet-sub"><code style="color:var(--card-orange)">Aluno joao;</code> — tudo junto!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-tag reveal d2">Ficha de Aluno</div>
+      <div class="ficha-card reveal d3">
+        <div class="ficha-row">
+          <span class="ficha-label">Matrícula</span>
+          <span class="ficha-value">2024001</span>
+          <span class="ficha-type">int</span>
+        </div>
+        <div class="ficha-row">
+          <span class="ficha-label">Nome</span>
+          <span class="ficha-value">João Silva</span>
+          <span class="ficha-type">char[40]</span>
+        </div>
+        <div class="ficha-row">
+          <span class="ficha-label">Nota Final</span>
+          <span class="ficha-value">8.5</span>
+          <span class="ficha-type">float</span>
+        </div>
+        <div class="ficha-row">
+          <span class="ficha-label">Faltas</span>
+          <span class="ficha-value">3</span>
+          <span class="ficha-type">int</span>
+        </div>
+      </div>
+      <div class="card-orange reveal d4" style="margin-top:20px; padding:18px 24px; border-radius:12px;">
+        <strong style="font-size:20px; letter-spacing:.1em; text-transform:uppercase;">struct Aluno</strong>
+        <div style="font-size:22px; margin-top:6px; color:rgba(26,26,26,0.75)">
+          = a ficha inteira em uma só variável
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 05 — SINTAXE: DECLARAÇÃO
+     ============================================= -->
+<section class="slide" aria-label="Declaração de struct">
+  <div class="slide-num reveal d1">05</div>
+  <div class="slide-label reveal d1">Sintaxe</div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-tag reveal d1">Declaração</div>
+      <h2 class="reveal d2">Como declarar<br>uma struct</h2>
+      <div class="accent-line reveal d3"></div>
+
+      <div class="reveal d4">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text"><code style="color:var(--card-orange)">struct</code> — palavra-chave do C</div>
+            <div class="bullet-sub">indica que vem um tipo composto</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Cada campo tem seu tipo e nome</div>
+            <div class="bullet-sub">separados por <code style="color:var(--card-orange)">;</code> como variáveis normais</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text"><code class="bad">};</code> — ponto-e-vírgula obrigatório!</div>
+            <div class="bullet-sub">erro clássico: esquecer o <code class="bad">;</code> após o <code class="bad">}</code></div>
+          </div>
+        </div>
+      </div>
+      <div class="highlight-box reveal d5" style="margin-top:24px; font-size:25px;">
+        A declaração <strong>não ocupa memória</strong> — apenas define o tipo.<br>
+        Memória é alocada ao <strong>criar uma variável</strong> desse tipo.
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C — Aluno" style="margin-bottom:26px;"><span class="kw">struct</span> Aluno {
+    <span class="kw">int</span>   <span class="field">matricula</span>;
+    <span class="kw">char</span>  <span class="field">nome</span>[<span class="num">40</span>];
+    <span class="kw">float</span> <span class="field">nota</span>;
+    <span class="kw">int</span>   <span class="field">aprovado</span>;
+}; <span class="cm">/* ← ponto-e-vírgula! */</span>
+
+<span class="cm">/* declarando variáveis */</span>
+<span class="kw">struct</span> Aluno <span class="field">a1</span>;
+<span class="kw">struct</span> Aluno <span class="field">a2</span>;
+</div>
+
+      <div class="code-wrap reveal d4" data-lang="C — Produto"><span class="kw">struct</span> Produto {
+    <span class="kw">int</span>    <span class="field">codigo</span>;
+    <span class="kw">char</span>   <span class="field">descricao</span>[<span class="num">60</span>];
+    <span class="kw">double</span> <span class="field">preco</span>;
+    <span class="kw">int</span>    <span class="field">estoque</span>;
+};
+
+<span class="kw">struct</span> Produto <span class="field">p</span>;
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 06 — ACESSO AOS CAMPOS
+     ============================================= -->
+<section class="slide" aria-label="Acesso aos campos">
+  <div class="slide-num reveal d1">06</div>
+  <div class="slide-label reveal d1">Operador ponto</div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-tag reveal d1">Acesso</div>
+      <h2 class="reveal d2">Operador ponto <span style="color:var(--card-orange)">.</span></h2>
+      <div class="accent-line reveal d3"></div>
+
+      <div class="analogy-tag reveal d3">📦 Analogia</div>
+      <div class="reveal d4" style="font-size:27px; line-height:1.5; color:rgba(255,255,255,0.85); margin-bottom:18px">
+        Pense em <code style="color:var(--card-orange)">a1</code> como uma <strong>caixa</strong>.<br>
+        O ponto <code style="color:var(--card-orange)">.</code> é a <strong>gaveta</strong> que você abre<br>
+        para acessar o campo desejado.
+      </div>
+      <div class="reveal d5">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div><div class="bullet-text"><code style="color:#FFD54F">a1.matricula</code> → lê/escreve inteiro</div></div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div><div class="bullet-text"><code style="color:#FFD54F">a1.nota</code> → lê/escreve float</div></div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text"><code style="color:#FFD54F">a1.nome</code> → array de char</div>
+            <div class="bullet-sub">usar <code style="color:var(--card-orange)">strcpy()</code> para escrever, <code style="color:var(--card-orange)">%s</code> para imprimir</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C"><span class="kw">struct</span> Aluno a1;
+
+<span class="cm">/* Escrevendo nos campos */</span>
+a1.<span class="field">matricula</span> = <span class="num">2024001</span>;
+a1.<span class="field">nota</span>      = <span class="num">8.5f</span>;
+a1.<span class="field">aprovado</span>  = <span class="num">1</span>;
+<span class="fn">strcpy</span>(a1.<span class="field">nome</span>, <span class="str">"João Silva"</span>);
+
+<span class="cm">/* Lendo os campos */</span>
+<span class="fn">printf</span>(<span class="str">"Matrícula: %d\n"</span>, a1.<span class="field">matricula</span>);
+<span class="fn">printf</span>(<span class="str">"Nome: %s\n"</span>,       a1.<span class="field">nome</span>);
+<span class="fn">printf</span>(<span class="str">"Nota: %.1f\n"</span>,     a1.<span class="field">nota</span>);
+
+<span class="cm">/* Lendo com scanf */</span>
+<span class="fn">scanf</span>(<span class="str">"%d"</span>, &a1.<span class="field">matricula</span>);
+<span class="fn">scanf</span>(<span class="str">"%s"</span>,  a1.<span class="field">nome</span>);
+<span class="fn">scanf</span>(<span class="str">"%f"</span>, &a1.<span class="field">nota</span>);
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 07 — TYPEDEF
+     ============================================= -->
+<section class="slide" aria-label="typedef">
+  <div class="slide-num reveal d1">07</div>
+  <div class="slide-label reveal d1">typedef</div>
+
+  <div class="full-col">
+    <div class="section-tag reveal d1">Simplificando</div>
+    <h2 class="reveal d2">typedef — apelido para o tipo</h2>
+    <div class="accent-line reveal d3"></div>
+
+    <div class="highlight-box reveal d4" style="margin-bottom:22px; font-size:26px;">
+      <strong>typedef</strong> cria um <em>apelido</em> para um tipo existente.
+      Com structs, elimina a necessidade de escrever <code style="color:var(--card-orange)">struct</code> toda vez.
+      É o padrão em código C profissional.
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:36px;" class="reveal d5">
+      <div>
+        <div class="compare-label label-bad">❌ Sem typedef — verboso</div>
+        <div class="code-wrap" data-lang="C" style="font-size:24px;"><span class="kw">struct</span> Aluno a1;
+<span class="kw">struct</span> Aluno a2;
+<span class="kw">struct</span> Aluno turma[<span class="num">40</span>];
+
+<span class="kw">void</span> <span class="fn">imprimir</span>(<span class="kw">struct</span> Aluno a) {
+    <span class="cm">/* ... */</span>
+}
+</div>
+      </div>
+      <div>
+        <div class="compare-label label-good">✅ Com typedef — idiomático</div>
+        <div class="code-wrap" data-lang="C" style="font-size:24px;"><span class="kw">typedef struct</span> {
+    <span class="kw">int</span>   matricula;
+    <span class="kw">char</span>  nome[<span class="num">40</span>];
+    <span class="kw">float</span> nota;
+} <span class="hl">Aluno</span>;
+
+Aluno a1;
+Aluno turma[<span class="num">40</span>];
+
+<span class="kw">void</span> <span class="fn">imprimir</span>(Aluno a) {
+    <span class="cm">/* ... */</span>
+}
+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 08 — INICIALIZAÇÃO
+     ============================================= -->
+<section class="slide" aria-label="Inicialização de structs">
+  <div class="slide-num reveal d1">08</div>
+  <div class="slide-label reveal d1">Inicialização</div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-tag reveal d1">Três formas</div>
+      <h2 class="reveal d2">Inicializando<br>uma struct</h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="reveal d4">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Campo a campo</div>
+            <div class="bullet-sub">mais verboso, mais explícito</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Com chaves — posicional</div>
+            <div class="bullet-sub">segue a ordem de declaração dos campos</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Com chaves — por nome (C99)</div>
+            <div class="bullet-sub">mais legível, ordem livre</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-orange reveal d5" style="margin-top:24px; padding:18px 24px; border-radius:12px;">
+        <strong style="font-size:20px; letter-spacing:.1em; text-transform:uppercase;">⚠️ Dica</strong>
+        <div style="font-size:22px; margin-top:6px; color:rgba(26,26,26,0.8)">
+          Campos não inicializados contêm <em>lixo</em>.<br>
+          Sempre inicialize <strong>todos</strong> antes de usar!
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C — 3 estilos"><span class="cm">/* 1. Campo a campo */</span>
+Aluno a1;
+a1.<span class="field">matricula</span> = <span class="num">2024001</span>;
+<span class="fn">strcpy</span>(a1.<span class="field">nome</span>, <span class="str">"Maria"</span>);
+a1.<span class="field">nota</span> = <span class="num">9.0f</span>;
+
+<span class="cm">/* 2. Chaves — posicional */</span>
+Aluno a2 = {<span class="num">2024002</span>, <span class="str">"Pedro"</span>, <span class="num">7.5f</span>};
+
+<span class="cm">/* 3. Por nome de campo (C99) ✅ */</span>
+Aluno a3 = {
+    .<span class="field">matricula</span> = <span class="num">2024003</span>,
+    .<span class="field">nome</span>      = <span class="str">"Ana"</span>,
+    .<span class="field">nota</span>      = <span class="num">8.0f</span>
+};
+
+<span class="cm">/* Zerando todos os campos */</span>
+Aluno vazio = {<span class="num">0</span>};
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 09 — CÓPIA DE STRUCTS
+     ============================================= -->
+<section class="slide" aria-label="Cópia de structs">
+  <div class="slide-num reveal d1">09</div>
+  <div class="slide-label reveal d1">Cópia</div>
+
+  <div class="full-col">
+    <div class="section-tag reveal d1">Atribuição</div>
+    <h2 class="reveal d2">Structs são copiadas <span style="color:var(--card-orange)">por valor</span></h2>
+    <div class="accent-line reveal d3"></div>
+
+    <div class="highlight-box reveal d4" style="margin-bottom:24px; font-size:26px;">
+      <strong>a2 = a1;</strong> copia <em>todos os campos</em> de uma vez automaticamente.
+      Modificar <code style="color:var(--card-orange)">a2</code> <strong>não afeta</strong> <code style="color:var(--card-orange)">a1</code>.
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:36px;" class="reveal d5">
+      <div>
+        <div class="compare-label label-good">✅ Cópia com =</div>
+        <div class="code-wrap" data-lang="C" style="font-size:24px;">Aluno a1 = {<span class="num">1</span>, <span class="str">"Ana"</span>, <span class="num">8.0f</span>};
+
+Aluno a2 = a1; <span class="cm">/* cópia completa */</span>
+
+a2.<span class="field">nota</span> = <span class="num">9.5f</span>;
+
+<span class="fn">printf</span>(<span class="str">"a1: %.1f\n"</span>, a1.<span class="field">nota</span>);
+<span class="cm">/* Saída: a1: 8.0  ← não mudou */</span>
+
+<span class="fn">printf</span>(<span class="str">"a2: %.1f\n"</span>, a2.<span class="field">nota</span>);
+<span class="cm">/* Saída: a2: 9.5 */</span>
+</div>
+      </div>
+      <div>
+        <div class="compare-label label-bad">⚠️ Comparação com == NÃO funciona</div>
+        <div class="code-wrap" data-lang="C" style="font-size:24px;"><span class="cm">/* ERRADO — erro de compilação: */</span>
+<span class="kw">if</span> (a1 == a2) { <span class="cm">/* ← inválido */</span> }
+
+<span class="cm">/* CERTO — compare campo a campo: */</span>
+<span class="kw">if</span> (a1.<span class="field">matricula</span> == a2.<span class="field">matricula</span>) {
+    <span class="fn">printf</span>(<span class="str">"Mesma matrícula\n"</span>);
+}
+
+<span class="cm">/* Para strings usar strcmp: */</span>
+<span class="kw">if</span> (<span class="fn">strcmp</span>(a1.<span class="field">nome</span>, a2.<span class="field">nome</span>) == <span class="num">0</span>) {
+    <span class="fn">printf</span>(<span class="str">"Mesmo nome\n"</span>);
+}
+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 10 — STRUCTS ANINHADAS
+     ============================================= -->
+<section class="slide" aria-label="Structs aninhadas">
+  <div class="slide-num reveal d1">10</div>
+  <div class="slide-label reveal d1">Aninhamento</div>
+
+  <div class="two-col">
+    <div>
+      <div class="analogy-tag reveal d1">🪆 Analogia</div>
+      <h2 class="reveal d2">Struct dentro<br>de struct</h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="reveal d4" style="font-size:26px; line-height:1.5; color:rgba(255,255,255,.85); margin-bottom:20px;">
+        Como uma boneca russa que contém outra boneca,
+        uma struct pode ter outra struct como campo.
+      </div>
+      <div class="reveal d5">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Acesso encadeado com pontos:</div>
+            <div class="bullet-sub"><code style="color:var(--card-orange)">a.endereco.cidade</code></div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Reutilize a struct interna</div>
+            <div class="bullet-sub"><code style="color:var(--card-orange)">Endereco</code> serve para Aluno, Funcionário, Loja…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C"><span class="kw">typedef struct</span> {
+    <span class="kw">char</span> <span class="field">rua</span>[<span class="num">60</span>];
+    <span class="kw">int</span>  <span class="field">numero</span>;
+    <span class="kw">char</span> <span class="field">cidade</span>[<span class="num">40</span>];
+    <span class="kw">char</span> <span class="field">cep</span>[<span class="num">10</span>];
+} Endereco;
+
+<span class="kw">typedef struct</span> {
+    <span class="kw">int</span>      <span class="field">matricula</span>;
+    <span class="kw">char</span>     <span class="field">nome</span>[<span class="num">40</span>];
+    <span class="hl">Endereco <span class="field">endereco</span>;</span>
+    <span class="kw">float</span>    <span class="field">nota</span>;
+} Aluno;
+
+<span class="cm">/* Preenchendo campos aninhados */</span>
+Aluno a;
+a.<span class="field">matricula</span> = <span class="num">42</span>;
+<span class="fn">strcpy</span>(a.<span class="field">endereco</span>.<span class="field">cidade</span>, <span class="str">"Caxias"</span>);
+<span class="fn">strcpy</span>(a.<span class="field">endereco</span>.<span class="field">cep</span>, <span class="str">"65604-180"</span>);
+a.<span class="field">endereco</span>.<span class="field">numero</span> = <span class="num">100</span>;
+<span class="fn">printf</span>(<span class="str">"%s - %s\n"</span>,
+    a.<span class="field">endereco</span>.<span class="field">cidade</span>,
+    a.<span class="field">endereco</span>.<span class="field">cep</span>);
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 11 — VETORES DE STRUCTS
+     ============================================= -->
+<section class="slide" aria-label="Vetores de structs">
+  <div class="slide-num reveal d1">11</div>
+  <div class="slide-label reveal d1">Vetores</div>
+
+  <div class="two-col">
+    <div>
+      <div class="analogy-tag reveal d1">📚 Analogia</div>
+      <h2 class="reveal d2">Vetor de structs<br>= prateleira<br>de fichas</h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="reveal d4" style="font-size:25px; line-height:1.5; color:rgba(255,255,255,.85);">
+        Gaveta com 40 fichas em sequência —
+        é exatamente o que <code style="color:var(--card-orange)">Aluno turma[40]</code>
+        representa na memória.
+      </div>
+      <div class="reveal d5" style="margin-top:22px;">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Cada posição = struct completa</div>
+            <div class="bullet-sub">turma[0], turma[1], ..., turma[39]</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-text">Acesso: <code style="color:var(--card-orange)">turma[i].campo</code></div>
+            <div class="bullet-sub">índice + ponto + nome do campo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C"><span class="kw">#define</span> N <span class="num">40</span>
+Aluno turma[N];
+
+<span class="cm">/* Lendo a turma inteira */</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; N; i++) {
+    <span class="fn">scanf</span>(<span class="str">"%d"</span>, &turma[i].<span class="field">matricula</span>);
+    <span class="fn">scanf</span>(<span class="str">"%s"</span>,  turma[i].<span class="field">nome</span>);
+    <span class="fn">scanf</span>(<span class="str">"%f"</span>, &turma[i].<span class="field">nota</span>);
+}
+
+<span class="cm">/* Calculando média */</span>
+<span class="kw">float</span> soma = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; N; i++) {
+    soma += turma[i].<span class="field">nota</span>;
+}
+<span class="kw">float</span> media = soma / N;
+<span class="fn">printf</span>(<span class="str">"Média: %.2f\n"</span>, media);
+
+<span class="cm">/* Buscando por matrícula */</span>
+<span class="kw">int</span> busca = <span class="num">2024005</span>;
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; N; i++) {
+    <span class="kw">if</span> (turma[i].<span class="field">matricula</span> == busca) {
+        <span class="fn">printf</span>(<span class="str">"%s\n"</span>, turma[i].<span class="field">nome</span>);
+        <span class="kw">break</span>;
+    }
+}
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 12 — APLICAÇÃO: SISTEMA BANCÁRIO
+     ============================================= -->
+<section class="slide" aria-label="Aplicação - Sistema Bancário">
+  <div class="slide-num reveal d1">12</div>
+  <div class="slide-label reveal d1">Aplicação Real</div>
+
+  <div class="two-col">
+    <div>
+      <div class="analogy-tag reveal d1">🏦 Sistema Bancário</div>
+      <h2 class="reveal d2">Conta corrente<br>como struct</h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="reveal d4" style="font-size:25px; line-height:1.5; color:rgba(255,255,255,.85); margin-bottom:18px;">
+        Cada conta tem dados fixos (agência, número, titular)
+        e saldo variável. Struct modela isso perfeitamente.
+      </div>
+      <div class="reveal d5">
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div><div class="bullet-text">Struct <code style="color:var(--card-orange)">Conta</code> agrupa tudo</div></div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div><div class="bullet-text">Funções recebem a struct como parâmetro</div></div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div><div class="bullet-text">Vetor de Conta = banco real</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C"><span class="kw">typedef struct</span> {
+    <span class="kw">int</span>    <span class="field">numero</span>;
+    <span class="kw">char</span>   <span class="field">agencia</span>[<span class="num">8</span>];
+    <span class="kw">char</span>   <span class="field">titular</span>[<span class="num">60</span>];
+    <span class="kw">double</span> <span class="field">saldo</span>;
+    <span class="kw">int</span>    <span class="field">ativa</span>;
+} Conta;
+
+<span class="kw">void</span> <span class="fn">depositar</span>(Conta *c, <span class="kw">double</span> valor) {
+    c-><span class="field">saldo</span> += valor;
+    <span class="fn">printf</span>(<span class="str">"Depósito: R$ %.2f\n"</span>, valor);
+    <span class="fn">printf</span>(<span class="str">"Saldo:    R$ %.2f\n"</span>, c-><span class="field">saldo</span>);
+}
+
+<span class="kw">void</span> <span class="fn">sacar</span>(Conta *c, <span class="kw">double</span> valor) {
+    <span class="kw">if</span> (valor > c-><span class="field">saldo</span>) {
+        <span class="fn">printf</span>(<span class="str">"Saldo insuficiente!\n"</span>);
+        <span class="kw">return</span>;
+    }
+    c-><span class="field">saldo</span> -= valor;
+    <span class="fn">printf</span>(<span class="str">"Saque: R$ %.2f\n"</span>, valor);
+}
+
+Conta c1 = {<span class="num">1001</span>, <span class="str">"0001"</span>, <span class="str">"João"</span>, <span class="num">500.0</span>, <span class="num">1</span>};
+<span class="fn">depositar</span>(&c1, <span class="num">200.0</span>);
+<span class="fn">sacar</span>(&c1, <span class="num">100.0</span>);
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 13 — MEMÓRIA: LAYOUT REAL
+     ============================================= -->
+<section class="slide" aria-label="Layout de memória">
+  <div class="slide-num reveal d1">13</div>
+  <div class="slide-label reveal d1">Memória</div>
+
+  <div class="two-col">
+    <div>
+      <div class="analogy-tag reveal d1">🧱 Por baixo do capô</div>
+      <h2 class="reveal d2">Campos ficam<br><span style="color:var(--card-orange)">contíguos</span><br>na memória</h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="reveal d4" style="font-size:25px; line-height:1.5; color:rgba(255,255,255,.85); margin-bottom:18px;">
+        Uma struct é um bloco contínuo de memória dividido
+        em faixas — uma por campo, na ordem de declaração.
+      </div>
+      <div class="code-wrap reveal d5" data-lang="C" style="font-size:23px;">Aluno a1;
+<span class="fn">printf</span>(<span class="str">"%p\n"</span>, &a1);
+<span class="fn">printf</span>(<span class="str">"%p\n"</span>, &a1.<span class="field">matricula</span>);
+<span class="cm">/* base + 0  → mesmo endereço */</span>
+<span class="fn">printf</span>(<span class="str">"%p\n"</span>, &a1.<span class="field">nome</span>);
+<span class="cm">/* base + 4 */</span>
+<span class="fn">printf</span>(<span class="str">"%p\n"</span>, &a1.<span class="field">nota</span>);
+<span class="cm">/* base + 44 */</span>
+<span class="fn">printf</span>(<span class="str">"%zu\n"</span>, <span class="kw">sizeof</span>(a1));
+<span class="cm">/* 48 bytes */</span>
+</div>
+    </div>
+
+    <div>
+      <div class="section-tag reveal d2">struct Aluno — 48 bytes</div>
+      <div class="mem-block reveal d3">
+        <div class="mem-header">endereço base: 0x1000</div>
+        <div class="mem-row-item">
+          <div class="mem-offset">+0</div>
+          <div class="mem-field">int matricula</div>
+          <div class="mem-bytes">4 bytes</div>
+          <div class="mem-val">2024001</div>
+        </div>
+        <div class="mem-row-item">
+          <div class="mem-offset">+4</div>
+          <div class="mem-field">char nome[40]</div>
+          <div class="mem-bytes">40 bytes</div>
+          <div class="mem-val">"João\0…"</div>
+        </div>
+        <div class="mem-row-item">
+          <div class="mem-offset">+44</div>
+          <div class="mem-field">float nota</div>
+          <div class="mem-bytes">4 bytes</div>
+          <div class="mem-val">8.5f</div>
+        </div>
+      </div>
+      <div class="highlight-box reveal d4" style="margin-top:22px; font-size:25px;">
+        <strong>sizeof(struct Aluno)</strong><br>
+        = 4 + 40 + 4 = <span style="color:var(--card-orange); font-family:'Courier New'">48 bytes</span><br><br>
+        O compilador pode adicionar <em>padding</em>.<br>
+        Use sempre <code style="color:var(--card-orange)">sizeof()</code> para descobrir o tamanho real.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 14 — SIZEOF
+     ============================================= -->
+<section class="slide" aria-label="sizeof com structs">
+  <div class="slide-num reveal d1">14</div>
+  <div class="slide-label reveal d1">sizeof</div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-tag reveal d1">Tamanho</div>
+      <h2 class="reveal d2">Medindo uma<br>struct com<br><span style="color:var(--card-orange)">sizeof</span></h2>
+      <div class="accent-line reveal d3"></div>
+      <div class="reveal d4" style="font-size:25px; line-height:1.5; color:rgba(255,255,255,.85); margin-bottom:18px;">
+        <code style="color:var(--card-orange)">sizeof</code> retorna o tamanho em bytes.
+        Com structs, é a única forma confiável — o compilador
+        pode inserir <em>padding</em> para alinhamento.
+      </div>
+      <div class="sizeof-card reveal d5">
+        <div class="sizeof-row">
+          <span class="sizeof-name">sizeof(int)</span>
+          <span class="sizeof-val">4 bytes</span>
+        </div>
+        <div class="sizeof-row">
+          <span class="sizeof-name">sizeof(double)</span>
+          <span class="sizeof-val">8 bytes</span>
+        </div>
+        <div class="sizeof-row">
+          <span class="sizeof-name">sizeof(char[20])</span>
+          <span class="sizeof-val">20 bytes</span>
+        </div>
+        <div class="sizeof-row">
+          <span class="sizeof-name">sizeof(Produto)</span>
+          <span class="sizeof-val">≥ 32 bytes*</span>
+        </div>
+      </div>
+      <div style="font-size:17px; color:var(--text-muted); margin-top:8px" class="reveal d5">* pode ser maior por causa do padding</div>
+    </div>
+
+    <div>
+      <div class="code-wrap reveal d3" data-lang="C"><span class="kw">typedef struct</span> {
+    <span class="kw">int</span>    <span class="field">cod</span>;
+    <span class="kw">double</span> <span class="field">preco</span>;
+    <span class="kw">char</span>   <span class="field">nome</span>[<span class="num">20</span>];
+} Produto;
+
+Produto p;
+
+<span class="cm">/* Tamanho do tipo */</span>
+<span class="fn">printf</span>(<span class="str">"%zu\n"</span>, <span class="kw">sizeof</span>(Produto));
+
+<span class="cm">/* Tamanho da variável */</span>
+<span class="fn">printf</span>(<span class="str">"%zu\n"</span>, <span class="kw">sizeof</span>(p));
+
+<span class="cm">/* Tamanho de um campo */</span>
+<span class="fn">printf</span>(<span class="str">"%zu\n"</span>, <span class="kw">sizeof</span>(p.<span class="field">preco</span>));
+
+<span class="cm">/* Tamanho de um vetor inteiro */</span>
+Produto estoque[<span class="num">100</span>];
+<span class="fn">printf</span>(<span class="str">"%zu bytes\n"</span>, <span class="kw">sizeof</span>(estoque));
+</div>
+      <div class="highlight-box reveal d4" style="margin-top:20px; font-size:24px;">
+        <strong>Regra de ouro:</strong> nunca use números fixos para tamanho.<br>
+        Use <code style="color:var(--card-orange)">sizeof()</code> — o compilador calcula para você.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 15 — BOAS PRÁTICAS
+     ============================================= -->
+<section class="slide" aria-label="Boas práticas">
+  <div class="slide-num reveal d1">15</div>
+  <div class="slide-label reveal d1">Boas Práticas</div>
+
+  <div class="full-col">
+    <div class="section-tag reveal d1">Dicas profissionais</div>
+    <h2 class="reveal d2">Boas práticas com structs</h2>
+    <div class="accent-line reveal d3"></div>
+
+    <div class="practices-grid reveal d4">
+      <div class="practice-card">
+        <div class="practice-icon">📛</div>
+        <div class="practice-title">Nomes claros</div>
+        <div class="practice-text">
+          Use <code style="color:var(--card-orange)">PascalCase</code> para o tipo:<br>
+          <code style="color:#A5D6A7">Aluno</code>, <code style="color:#A5D6A7">ContaBancaria</code><br><br>
+          Use <code style="color:var(--card-orange)">snake_case</code> para campos:<br>
+          <code style="color:#A5D6A7">nota_final</code>, <code style="color:#A5D6A7">data_nascimento</code>
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-icon">🔄</div>
+        <div class="practice-title">Sempre typedef</div>
+        <div class="practice-text">
+          Prefira:<br>
+          <code style="color:var(--card-orange)">typedef struct { ... } Nome;</code><br><br>
+          Evita repetir <code style="color:#EF9A9A">struct Aluno</code> em toda declaração.
+          Padrão em C profissional e em bibliotecas como SDL e GTK.
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-icon">🔢</div>
+        <div class="practice-title">Use sizeof()</div>
+        <div class="practice-text">
+          Nunca assuma tamanhos fixos.<br><br>
+          <code style="color:var(--card-orange)">sizeof(Aluno)</code> em vez de <code style="color:#EF9A9A">48</code>.<br><br>
+          O padding pode variar entre compiladores e arquiteturas.
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-icon">🧹</div>
+        <div class="practice-title">Inicialize sempre</div>
+        <div class="practice-text">
+          Campos não inicializados = <em>lixo</em>.<br><br>
+          Use <code style="color:var(--card-orange)">= {0}</code> para zerar tudo de uma vez.<br><br>
+          Evita bugs silenciosos e difíceis de depurar.
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-icon">📐</div>
+        <div class="practice-title">Agrupe campos</div>
+        <div class="practice-text">
+          Campos do mesmo conceito → struct auxiliar.<br><br>
+          <code style="color:var(--card-orange)">Endereco</code> dentro de <code style="color:var(--card-orange)">Aluno</code><br>
+          em vez de <code style="color:#EF9A9A">rua</code>, <code style="color:#EF9A9A">numero</code>, <code style="color:#EF9A9A">cidade</code> soltos.
+        </div>
+      </div>
+      <div class="practice-card">
+        <div class="practice-icon">📝</div>
+        <div class="practice-title">Documente os campos</div>
+        <div class="practice-text">
+          Comentários curtos nas declarações:<br><br>
+          <code style="color:#A5D6A7">float nota; /* 0.0–10.0 */</code><br>
+          <code style="color:#A5D6A7">int ativa;  /* 1=sim 0=não */</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SLIDE 16 — ENCERRAMENTO
+     ============================================= -->
+<section class="slide slide-fim" aria-label="Encerramento">
+  <div class="slide-num reveal d1">16</div>
+
+  <div class="big-struct reveal d2">{ }</div>
+
+  <div class="summary-list">
+    <div class="sum-item reveal d3">
+      <div class="sum-dot">01</div>
+      <span>Arrays paralelos são frágeis — struct resolve</span>
+    </div>
+    <div class="sum-item reveal d4">
+      <div class="sum-dot">02</div>
+      <span>Struct agrupa dados heterogêneos em um tipo</span>
+    </div>
+    <div class="sum-item reveal d5">
+      <div class="sum-dot">03</div>
+      <span>Acesso via operador ponto <code style="color:var(--card-orange)">.</code></span>
+    </div>
+    <div class="sum-item reveal d6">
+      <div class="sum-dot">04</div>
+      <span>typedef elimina a repetição de <code style="color:var(--card-orange)">struct</code></span>
+    </div>
+    <div class="sum-item reveal d7">
+      <div class="sum-dot">05</div>
+      <span>Structs são copiadas por valor com <code style="color:var(--card-orange)">=</code></span>
+    </div>
+    <div class="sum-item reveal d8">
+      <div class="sum-dot">06</div>
+      <span>Vetor de structs = coleção de registros</span>
+    </div>
+  </div>
+
+  <div class="bottom-card reveal d3">
+    <div>
+      <h2>Structs em C</h2>
+      <p>Da bagunça de arrays paralelos<br>para dados organizados e reutilizáveis.</p>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:20px; color:rgba(26,26,26,.6); font-weight:600; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px">Programação Estruturada</div>
+      <div style="font-size:56px; font-family:'Archivo Black',sans-serif; color:#1a1a1a; line-height:1">IFMA</div>
+      <div style="font-size:20px; color:rgba(26,26,26,.6); margin-top:4px">Campus Caxias</div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<div class="edit-hotzone" id="editHotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Modo edição (E)">✏️</button>
+
+<div class="deck-controls">
+  <button id="btnPrev" aria-label="Slide anterior">← Anterior</button>
+  <span class="slide-counter" id="slideCounter">1 / 16</span>
+  <button id="btnNext" aria-label="Próximo slide">Próximo →</button>
+</div>
+
+<script>
+class SlidePresentation {
+  constructor() {
+    this.slides  = document.querySelectorAll('.slide');
+    this.total   = this.slides.length;
+    this.current = 0;
+    this.stage   = document.getElementById('deckStage');
+    this.counter = document.getElementById('slideCounter');
+    this.setupScale();
+    this.setupKeyboard();
+    this.setupTouch();
+    this.setupButtons();
+    this.show(0);
+  }
+
+  setupScale() {
+    const scale = () => {
+      const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      const x = (window.innerWidth  - 1920 * f) / 2;
+      const y = (window.innerHeight - 1080 * f) / 2;
+      this.stage.style.transform = `translate(${x}px,${y}px) scale(${f})`;
+    };
+    scale();
+    window.addEventListener('resize', scale);
+  }
+
+  show(idx) {
+    this.current = Math.max(0, Math.min(idx, this.total - 1));
+    this.slides.forEach((s, i) => {
+      const on = i === this.current;
+      s.classList.toggle('active',  on);
+      s.classList.toggle('visible', on);
+    });
+    this.counter.textContent = `${this.current + 1} / ${this.total}`;
+  }
+
+  next() { this.show(this.current + 1); }
+  prev() { this.show(this.current - 1); }
+
+  setupKeyboard() {
+    document.addEventListener('keydown', e => {
+      if (e.target.getAttribute('contenteditable')) return;
+      const map = {
+        ArrowRight: () => this.next(),
+        ArrowDown:  () => this.next(),
+        ' ':        () => this.next(),
+        PageDown:   () => this.next(),
+        ArrowLeft:  () => this.prev(),
+        ArrowUp:    () => this.prev(),
+        PageUp:     () => this.prev(),
+        Home:       () => this.show(0),
+        End:        () => this.show(this.total - 1),
+      };
+      if (map[e.key]) { e.preventDefault(); map[e.key](); }
+      if (e.key === 'e' || e.key === 'E') editor.toggleEdit();
+    });
+  }
+
+  setupTouch() {
+    let sx = 0;
+    this.stage.addEventListener('touchstart', e => {
+      sx = e.touches[0].clientX;
+    }, { passive: true });
+    this.stage.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 40) { dx < 0 ? this.next() : this.prev(); }
+    }, { passive: true });
+  }
+
+  setupButtons() {
+    document.getElementById('btnNext').addEventListener('click', () => this.next());
+    document.getElementById('btnPrev').addEventListener('click', () => this.prev());
+  }
+}
+
+class InlineEditor {
+  constructor() {
+    this.isActive = false;
+    this.toggle   = document.getElementById('editToggle');
+    this.hotzone  = document.getElementById('editHotzone');
+    this._t       = null;
+
+    this.hotzone.addEventListener('mouseenter', () => {
+      clearTimeout(this._t);
+      this.toggle.classList.add('show');
+    });
+    this.hotzone.addEventListener('mouseleave', () => {
+      this._t = setTimeout(() => {
+        if (!this.isActive) this.toggle.classList.remove('show');
+      }, 400);
+    });
+    this.toggle.addEventListener('mouseenter', () => clearTimeout(this._t));
+    this.toggle.addEventListener('mouseleave', () => {
+      this._t = setTimeout(() => {
+        if (!this.isActive) this.toggle.classList.remove('show');
+      }, 400);
+    });
+    this.toggle.addEventListener('click', () => this.toggleEdit());
+    this.hotzone.addEventListener('click',  () => this.toggleEdit());
+  }
+
+  toggleEdit() {
+    this.isActive = !this.isActive;
+    this.toggle.classList.toggle('active', this.isActive);
+    this.toggle.textContent = this.isActive ? '💾' : '✏️';
+    document.querySelectorAll(
+      '.slide h1,.slide h2,.slide p,.slide .bullet-text,.slide .bullet-sub,' +
+      '.slide .highlight-box,.slide .practice-text,.slide .practice-title,.slide .info-pill'
+    ).forEach(el => {
+      el.contentEditable = this.isActive ? 'true' : 'false';
+      el.style.outline   = this.isActive ? '1px dashed rgba(255,87,34,0.4)' : '';
+    });
+    if (!this.isActive) this.toggle.classList.remove('show');
+  }
+}
+
+const deck   = new SlidePresentation();
+const editor = new InlineEditor();
+</script>
+</body>
+</html>

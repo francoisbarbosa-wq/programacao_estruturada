@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PE — Aula 05 · Funções e Structs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   FIXED 16:9 STAGE  (1280×720, scaled up for datashow)
+   =========================================== */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-stage{position:absolute;left:0;top:0;width:1280px;height:720px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg);}
+.slide{position:absolute;inset:0;width:1280px;height:720px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg);}
+.slide.active{visibility:visible;opacity:1;pointer-events:auto;z-index:1;}
+img,video,canvas,svg{max-width:100%;max-height:100%;}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important;}}
+
+/* ===========================================
+   BOLD SIGNAL  ·  dark / orange
+   =========================================== */
+:root{
+  --stage-bg:#000;
+  --slide-bg:#131110;
+  --ink:#F6F1E9;
+  --muted:#A9A097;
+  --accent:#FF6A00;
+  --accent-2:#FFB454;
+  --code-bg:#1B1713;
+  --code-border:rgba(255,106,0,.34);
+  --line:rgba(255,255,255,.09);
+  --card:rgba(255,255,255,.035);
+
+  /* === TAMANHOS PARA DATASHOW (ampliados) === */
+  --fs-bullet:30px;       /* bullets */
+  --fs-bullet-sub:22px;   /* subtítulos de bullet */
+  --fs-code:26px;         /* código base */
+  --fs-code-sm:28px;      /* código em blocos menores */
+  --fs-body:26px;         /* texto corrido (25–27) */
+  --fs-callout:27px;      /* caixas de destaque */
+}
+
+*{box-sizing:border-box;}
+.slide{
+  font-family:'Archivo',system-ui,sans-serif;
+  color:var(--ink);
+  padding:64px 80px 70px;
+  background:
+    radial-gradient(1100px 540px at 88% -8%, rgba(255,106,0,.16), transparent 60%),
+    radial-gradient(900px 620px at -6% 110%, rgba(255,106,0,.07), transparent 60%),
+    var(--slide-bg);
+}
+
+/* topo / rodapé */
+.kicker{
+  display:inline-flex;align-items:center;gap:12px;
+  font-size:19px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent-2);
+}
+.kicker::before{content:"";width:34px;height:4px;border-radius:3px;background:var(--accent);}
+.foot{
+  position:absolute;left:80px;right:80px;bottom:26px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:16px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;
+}
+.foot b{color:var(--accent-2);font-weight:700;}
+
+h1.title{font-size:64px;line-height:1.04;font-weight:900;letter-spacing:-.02em;margin:18px 0 0;}
+h2.head{font-size:50px;line-height:1.05;font-weight:800;letter-spacing:-.015em;margin:14px 0 18px;}
+h2.head .lo{color:var(--accent);}
+.lead{font-size:var(--fs-body);line-height:1.5;color:var(--ink);max-width:62ch;}
+.muted{color:var(--muted);}
+
+/* bullets */
+ul.bul{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:16px;}
+ul.bul>li{position:relative;padding-left:40px;font-size:var(--fs-bullet);line-height:1.32;font-weight:600;}
+ul.bul>li::before{content:"";position:absolute;left:0;top:.55em;width:18px;height:18px;border-radius:5px;
+  background:var(--accent);box-shadow:0 0 0 5px rgba(255,106,0,.16);}
+ul.bul>li .sub{display:block;margin-top:6px;font-size:var(--fs-bullet-sub);font-weight:500;color:var(--muted);line-height:1.4;}
+
+/* caixa de destaque */
+.callout{
+  margin-top:20px;border:1px solid var(--code-border);border-left:6px solid var(--accent);
+  background:linear-gradient(180deg,rgba(255,106,0,.10),rgba(255,106,0,.03));
+  border-radius:14px;padding:20px 24px;font-size:var(--fs-callout);line-height:1.42;
+}
+.callout b{color:var(--accent-2);}
+
+/* código */
+.code{
+  background:var(--code-bg);border:1px solid var(--code-border);border-radius:14px;
+  padding:22px 26px;font-family:'JetBrains Mono',monospace;font-size:var(--fs-code);
+  line-height:1.5;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45);
+  white-space:pre;tab-size:4;
+}
+.code.sm{font-size:var(--fs-code-sm);}
+.code.tight{font-size:26px;line-height:1.3;padding:16px 24px;}
+.code.tight .winbar{margin:-2px 0 10px;}
+.code .winbar{display:flex;gap:9px;margin:-4px 0 16px;}
+.code .winbar i{width:13px;height:13px;border-radius:50%;display:inline-block;}
+.code .winbar i:nth-child(1){background:#ff5f56;}
+.code .winbar i:nth-child(2){background:#ffbd2e;}
+.code .winbar i:nth-child(3){background:#27c93f;}
+.code code{display:block;}
+/* syntax colors */
+.k{color:#FF8A3D;font-weight:600;}   /* keyword */
+.t{color:#FFD27A;}                    /* type */
+.s{color:#9ED49A;}                    /* string */
+.c{color:#7C746B;font-style:italic;}  /* comment */
+.n{color:#E7A6FF;}                     /* number */
+.fn{color:#7FC9FF;}                    /* function name */
+.pp{color:#A9A097;}                    /* preprocessor */
+
+/* layout duas colunas */
+.cols{display:grid;grid-template-columns:.8fr 1.2fr;gap:40px;align-items:start;}
+.cols.w55{grid-template-columns:1.05fr .95fr;}
+
+/* numero grande de slide / capa */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.cover .meta{margin-top:30px;display:flex;gap:40px;font-size:21px;color:var(--muted);}
+.cover .meta b{color:var(--ink);font-weight:700;}
+.cover .big{font-size:128px;font-weight:900;line-height:.9;letter-spacing:-.03em;}
+.cover .big em{font-style:normal;color:var(--accent);}
+
+/* divisor de seção */
+.divider{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.divider .num{font-family:'JetBrains Mono',monospace;font-size:30px;color:var(--accent-2);letter-spacing:.2em;}
+.divider h2{font-size:104px;font-weight:900;letter-spacing:-.03em;margin:10px 0 0;line-height:.95;}
+.divider h2 .dot{color:var(--accent);}
+.divider p{font-size:var(--fs-body);color:var(--muted);max-width:60ch;margin-top:20px;}
+
+/* mini tags */
+.tags{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.tag{font-size:18px;font-weight:700;letter-spacing:.04em;padding:8px 16px;border-radius:999px;
+  border:1px solid var(--code-border);color:var(--accent-2);background:rgba(255,106,0,.06);}
+
+/* lista de exercícios */
+ol.ex{counter-reset:e;list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 38px;}
+ol.ex>li{counter-increment:e;position:relative;padding-left:54px;font-size:23px;line-height:1.34;font-weight:500;}
+ol.ex>li::before{content:counter(e);position:absolute;left:0;top:-2px;width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;
+  font-size:20px;color:#131110;background:var(--accent);}
+ol.ex>li b{color:var(--accent-2);font-weight:700;}
+
+/* entrada animada */
+.slide.active .anim{animation:rise .6s cubic-bezier(.22,.7,.3,1) both;}
+.slide.active .anim:nth-child(2){animation-delay:.06s;}
+.slide.active .anim:nth-child(3){animation-delay:.12s;}
+.slide.active .anim:nth-child(4){animation-delay:.18s;}
+.slide.active .anim:nth-child(5){animation-delay:.24s;}
+@keyframes rise{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:none;}}
+
+/* controles */
+.deck-controls{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:1000;
+  display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-family:'Archivo';}
+.deck-controls button{all:unset;cursor:pointer;color:var(--ink);font-size:20px;width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.deck-controls button:hover{background:rgba(255,106,0,.2);}
+.deck-controls .count{font-family:'JetBrains Mono';font-size:15px;color:var(--muted);min-width:54px;text-align:center;}
+.progress{position:fixed;top:0;left:0;height:4px;background:var(--accent);z-index:1001;transition:width .3s;}
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+
+  <!-- 1 · CAPA -->
+  <section class="slide active">
+    <div class="cover">
+      <div class="kicker anim">Programação Estruturada · BCC</div>
+      <div class="big anim" style="margin-top:24px;">Funções <em>&amp;</em><br>Structs</div>
+      <div class="lead anim" style="margin-top:26px;max-width:54ch;">
+        Modularizando programas em C: como criar, declarar, chamar e retornar — e como
+        agrupar dados com <span style="color:var(--accent-2);font-weight:700;">struct</span>.
+      </div>
+      <div class="meta anim">
+        <span>Prof. <b>François</b></span>
+        <span>Aula <b>05</b></span>
+        <span>Linguagem <b>C</b></span>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções &amp; Structs</b></span></div>
+  </section>
+
+  <!-- 2 · DIVISOR FUNÇÕES -->
+  <section class="slide">
+    <div class="divider">
+      <div class="num anim">PARTE 01</div>
+      <h2 class="anim">Funções<span class="dot">.</span></h2>
+      <p class="anim">Blocos de código que executam uma tarefa específica e podem ser chamados em
+        diferentes pontos do programa.</p>
+      <div class="tags anim">
+        <span class="tag">sintaxe</span><span class="tag">declaração</span>
+        <span class="tag">parâmetros</span><span class="tag">retorno</span>
+        <span class="tag">recursão</span>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b></span></div>
+  </section>
+
+  <!-- 3 · O QUE SÃO -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">O que são?</h2>
+    <p class="lead anim">As funções são blocos de código que executam uma tarefa específica e podem
+      ser chamadas em diferentes partes de um programa.</p>
+    <ul class="bul anim">
+      <li>Organização<span class="sub">Separam o programa em partes lógicas e legíveis.</span></li>
+      <li>Modularidade<span class="sub">Cada função resolve um problema bem definido.</span></li>
+      <li>Reutilização<span class="sub">Escreve-se uma vez e usa-se quantas vezes for preciso.</span></li>
+    </ul>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · introdução</span></div>
+  </section>
+
+  <!-- 4 · SINTAXE -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Sintaxe</h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Toda função tem quatro partes: o <b style="color:var(--accent-2)">tipo de
+          retorno</b>, o <b style="color:var(--accent-2)">nome</b>, a lista de
+          <b style="color:var(--accent-2)">parâmetros</b> e o <b style="color:var(--accent-2)">corpo</b>.</p>
+        <div class="callout">A <b>assinatura</b> da função é: tipo de retorno + nome + parâmetros.</div>
+      </div>
+      <div class="code"><div class="winbar"><i></i><i></i><i></i></div><code><span class="t">tipo</span> <span class="fn">nome</span>(<span class="t">tipo</span> a, <span class="t">tipo</span> b) {
+    <span class="c">// corpo da função</span>
+    <span class="k">return</span> valor;
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · sintaxe</span></div>
+  </section>
+
+  <!-- 5 · DECLARAÇÃO / PROTÓTIPO -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Declaração <span class="lo">(protótipo)</span></h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Especifica o <b style="color:var(--accent-2)">nome</b>, o
+          <b style="color:var(--accent-2)">tipo de retorno</b> e os
+          <b style="color:var(--accent-2)">parâmetros</b> — ou seja, a assinatura.</p>
+        <div class="callout">É colocada <b>antes</b> da função <code style="font-family:'JetBrains Mono'">main()</code>.</div>
+      </div>
+      <div class="code"><div class="winbar"><i></i><i></i><i></i></div><code><span class="c">// protótipo (antes da main)</span>
+<span class="t">int</span> <span class="fn">soma</span>(<span class="t">int</span> a, <span class="t">int</span> b);
+
+<span class="t">int</span> <span class="fn">main</span>(<span class="t">void</span>) {
+    <span class="c">// ...</span>
+    <span class="k">return</span> <span class="n">0</span>;
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · declaração</span></div>
+  </section>
+
+  <!-- 6 · DEFINIÇÃO -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Definição</h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Contém o <b style="color:var(--accent-2)">corpo</b> da função, onde a lógica
+          é implementada.</p>
+        <div class="callout">Pode vir <b>antes</b> ou <b>depois</b> da <code style="font-family:'JetBrains Mono'">main()</code> (se houver protótipo).</div>
+      </div>
+      <div class="code"><div class="winbar"><i></i><i></i><i></i></div><code><span class="t">int</span> <span class="fn">soma</span>(<span class="t">int</span> a, <span class="t">int</span> b) {
+    <span class="t">int</span> resultado;
+    resultado = a + b;
+    <span class="k">return</span> resultado;
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · definição</span></div>
+  </section>
+
+  <!-- 7 · CHAMADA -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Chamada</h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Local onde a função é <b style="color:var(--accent-2)">invocada</b>. Os argumentos
+          são passados e a execução continua após o retorno.</p>
+        <div class="callout">O valor retornado pode ser <b>guardado</b> ou <b>usado</b> diretamente.</div>
+      </div>
+      <div class="code"><div class="winbar"><i></i><i></i><i></i></div><code><span class="t">int</span> <span class="fn">main</span>(<span class="t">void</span>) {
+    <span class="t">int</span> x;
+    x = <span class="fn">soma</span>(<span class="n">3</span>, <span class="n">4</span>);
+    <span class="fn">printf</span>(<span class="s">"%d\n"</span>, x);
+    <span class="k">return</span> <span class="n">0</span>;
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · chamada</span></div>
+  </section>
+
+  <!-- 8 · PARÂMETROS E ARGUMENTOS -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Parâmetros &amp; Argumentos</h2>
+    <div class="cols anim">
+      <div>
+        <ul class="bul">
+          <li>Parâmetros<span class="sub">Variáveis declaradas na definição da função.</span></li>
+          <li>Argumentos<span class="sub">Valores reais fornecidos na chamada.</span></li>
+        </ul>
+      </div>
+      <div class="code sm"><div class="winbar"><i></i><i></i><i></i></div><code><span class="c">// a e b são PARÂMETROS</span>
+<span class="t">int</span> <span class="fn">soma</span>(<span class="t">int</span> a, <span class="t">int</span> b) {
+    <span class="k">return</span> a + b;
+}
+
+<span class="c">// 3 e 4 são ARGUMENTOS</span>
+x = <span class="fn">soma</span>(<span class="n">3</span>, <span class="n">4</span>);</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · parâmetros</span></div>
+  </section>
+
+  <!-- 9 · RETORNO -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Retorno <span class="lo">(return)</span></h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">A função pode devolver um valor com a palavra-chave
+          <b style="color:var(--accent-2)">return</b>, transmitindo o resultado de volta ao
+          local de chamada.</p>
+        <div class="callout">O tipo do valor retornado deve <b>coincidir</b> com o tipo de retorno declarado.</div>
+      </div>
+      <div class="code"><div class="winbar"><i></i><i></i><i></i></div><code><span class="t">float</span> <span class="fn">media</span>(<span class="t">float</span> a, <span class="t">float</span> b) {
+    <span class="k">return</span> (a + b) / <span class="n">2</span>;
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · retorno</span></div>
+  </section>
+
+  <!-- 10 · SEM RETORNO (VOID) -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Sem retorno <span class="lo">(void)</span></h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Uma função sem retorno (procedimento) executa uma tarefa, mas
+          <b style="color:var(--accent-2)">não devolve</b> valor.</p>
+        <div class="callout">Útil para <b>ações</b> que não exigem um resultado — como imprimir na tela.</div>
+      </div>
+      <div class="code"><div class="winbar"><i></i><i></i><i></i></div><code><span class="t">void</span> <span class="fn">saudacao</span>(<span class="t">char</span> nome[]) {
+    <span class="fn">printf</span>(<span class="s">"Olá, %s!\n"</span>, nome);
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · void</span></div>
+  </section>
+
+  <!-- 11 · EXEMPLO COMPLETO -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Exemplo completo</h2>
+    <div class="code tight anim" style="max-width:none;"><div class="winbar"><i></i><i></i><i></i></div><code><span class="pp">#include &lt;stdio.h&gt;</span>
+
+<span class="t">int</span> <span class="fn">dobro</span>(<span class="t">int</span> n);          <span class="c">// protótipo</span>
+
+<span class="t">int</span> <span class="fn">main</span>(<span class="t">void</span>) {
+    <span class="t">int</span> x = <span class="n">5</span>;
+    <span class="fn">printf</span>(<span class="s">"Dobro de %d = %d\n"</span>, x, <span class="fn">dobro</span>(x));
+    <span class="k">return</span> <span class="n">0</span>;
+}
+
+<span class="t">int</span> <span class="fn">dobro</span>(<span class="t">int</span> n) {        <span class="c">// definição</span>
+    <span class="k">return</span> n * <span class="n">2</span>;
+}</code></div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · exemplo</span></div>
+  </section>
+
+  <!-- 12 · EXERCÍCIOS -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Exercícios</h2>
+    <ol class="ex anim">
+      <li>Função que recebe um número inteiro e devolve o seu <b>dobro</b>.</li>
+      <li>Função que verifica se um número é positivo ou negativo: retorna <b>1</b> (positivo), <b>-1</b> (negativo) e <b>0</b> (se igual a 0).</li>
+      <li>Função + programa de teste para o <b>volume de uma esfera</b> (raio por parâmetro). V = 4/3 · π · r³</li>
+      <li>Função que recebe dois números e retorna qual deles é o <b>maior</b>.</li>
+      <li>Função que recebe altura e raio de um <b>cilindro</b> e retorna o seu volume.</li>
+      <li>Função que recebe três notas e uma letra: <b>A</b> → média aritmética; <b>P</b> → média ponderada (pesos 5, 3 e 2).</li>
+    </ol>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · exercícios</span></div>
+  </section>
+
+  <!-- 14 · RECURSÃO -->
+  <section class="slide">
+    <div class="kicker anim">Funções</div>
+    <h2 class="head anim">Recursão</h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Uma função <b style="color:var(--accent-2)">recursiva</b> chama a si mesma para
+          resolver um problema em partes menores.</p>
+        <ul class="bul" style="margin-top:14px;">
+          <li>Caso base<span class="sub">Condição que encerra a recursão.</span></li>
+          <li>Caso recursivo<span class="sub">A função chama a si própria.</span></li>
+        </ul>
+      </div>
+      <div class="code sm"><div class="winbar"><i></i><i></i><i></i></div><code><span class="c">// caso base encerra a recursão</span>
+<span class="t">int</span> <span class="fn">fatorial</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n &lt;= <span class="n">1</span>)
+        <span class="k">return</span> <span class="n">1</span>;
+    <span class="k">return</span> n * <span class="fn">fatorial</span>(n - <span class="n">1</span>);
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Aula 05</span><span><b>Funções</b> · recursão</span></div>
+  </section>
+
+  </div>
+</div>
+
+<div class="deck-controls">
+  <button id="prev" aria-label="Anterior">‹</button>
+  <span class="count" id="count">1 / 13</span>
+  <button id="next" aria-label="Próximo">›</button>
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+const stage=document.getElementById('stage');
+const count=document.getElementById('count');
+const prog=document.getElementById('prog');
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  count.textContent=(i+1)+' / '+slides.length;
+  prog.style.width=((i+1)/slides.length*100)+'%';
+}
+function next(){show(i+1);}function prev(){show(i-1);}
+document.getElementById('next').onclick=next;
+document.getElementById('prev').onclick=prev;
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1);
+});
+stage.addEventListener('click',e=>{
+  if(e.clientX < window.innerWidth*0.35) prev(); else next();
+});
+function scaleStage(){
+  const s=Math.min(window.innerWidth/1280,window.innerHeight/720);
+  const x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2;
+  stage.style.transform=`translate(${x}px,${y}px) scale(${s})`;
+}
+window.addEventListener('resize',scaleStage);
+scaleStage();show(0);
+</script>
+</body>
+</html>
