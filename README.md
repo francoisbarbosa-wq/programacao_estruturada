@@ -31,7 +31,7 @@ Repositório com o material de estudo do curso de **Programação em C**, organi
 14. `break` e `continue`
 
 ### Módulo 5 — Funções
-15. Funções em C
+15. [Funções em C](https://francoisbarbosa-wq.github.io/programacao_estruturada/slides/PE-Aula05-Funcoes.html) ✅
 16. Escopo de Variáveis
 17. Funções da Biblioteca Padrão
 18. [Recursão](https://francoisbarbosa-wq.github.io/programacao_estruturada/slides/recurcao.html) ✅
@@ -48,7 +48,7 @@ Repositório com o material de estudo do curso de **Programação em C**, organi
 25. Ponteiros e Funções
 
 ### Módulo 8 — Estruturas de Dados e Memória
-26. Structs
+26. [Structs](https://francoisbarbosa-wq.github.io/programacao_estruturada/slides/structs-em-c_1.html)✅
 27. Enumerações (enums)
 28. Alocação Dinâmica de Memória
 
