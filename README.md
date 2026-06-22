@@ -1,6 +1,6 @@
 # 📘 Programação Estruturada em C
-
-Repositório com o material de estudo do curso de **Programação em C**, organizado por módulos. Cada aula possui (ou terá) uma página própria com slides e conteúdo.
+**Professor François Barbosa**
+Repositório com o material de estudo da disciplina de Programação Estruturada (**Programação em C**), organizado por módulos. Cada aula possui (ou terá) uma página própria com slides e conteúdo.
 
 > Páginas hospedadas via **GitHub Pages**.
 
@@ -57,29 +57,8 @@ Repositório com o material de estudo do curso de **Programação em C**, organi
 30. Pré-processador e Macros
 
 ---
-
-## 🔗 Páginas Disponíveis
-
-| Aula | Tema | Link |
-|:----:|------|:----:|
-| 18 | Recursão | [Acessar](https://francoisbarbosa-wq.github.io/programacao_estruturada/slides/recurcao.html) |
-
-> As demais páginas serão adicionadas conforme forem publicadas.
-
----
-
 ## 📌 Legenda
 - ✅ Página publicada e disponível
 - (sem marca) Página ainda não publicada
 
----
 
-## 🚀 Como contribuir
-1. Faça um *fork* deste repositório
-2. Crie a página da aula em `slides/`
-3. Atualize o link correspondente neste README
-4. Abra um *Pull Request*
-
----
-
-*Material baseado no curso "C Programming for Beginners".*
