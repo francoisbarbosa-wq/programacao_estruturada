@@ -1,1 +1,505 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PE — Recursão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   FIXED 16:9 STAGE  (1280×720, scaled up for datashow)
+   =========================================== */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-stage{position:absolute;left:0;top:0;width:1280px;height:720px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg);}
+.slide{position:absolute;inset:0;width:1280px;height:720px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg);}
+.slide.active{visibility:visible;opacity:1;pointer-events:auto;z-index:1;}
+img,video,canvas,svg{max-width:100%;max-height:100%;}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important;}}
 
+/* ===========================================
+   BOLD SIGNAL  ·  dark / orange
+   =========================================== */
+:root{
+  --stage-bg:#000;
+  --slide-bg:#131110;
+  --ink:#F6F1E9;
+  --muted:#A9A097;
+  --accent:#FF6A00;
+  --accent-2:#FFB454;
+  --code-bg:#1B1713;
+  --code-border:rgba(255,106,0,.34);
+  --line:rgba(255,255,255,.09);
+  --card:rgba(255,255,255,.035);
+
+  /* === TAMANHOS PARA DATASHOW (ampliados) === */
+  --fs-bullet:30px;       /* bullets */
+  --fs-bullet-sub:22px;   /* subtítulos de bullet */
+  --fs-code:26px;         /* código base */
+  --fs-code-sm:28px;      /* código em blocos menores */
+  --fs-body:26px;         /* texto corrido (25–27) */
+  --fs-callout:27px;      /* caixas de destaque */
+}
+
+*{box-sizing:border-box;}
+.slide{
+  font-family:'Archivo',system-ui,sans-serif;
+  color:var(--ink);
+  padding:64px 80px 70px;
+  background:
+    radial-gradient(1100px 540px at 88% -8%, rgba(255,106,0,.16), transparent 60%),
+    radial-gradient(900px 620px at -6% 110%, rgba(255,106,0,.07), transparent 60%),
+    var(--slide-bg);
+}
+
+/* topo / rodapé */
+.kicker{
+  display:inline-flex;align-items:center;gap:12px;
+  font-size:19px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent-2);
+}
+.kicker::before{content:"";width:34px;height:4px;border-radius:3px;background:var(--accent);}
+.foot{
+  position:absolute;left:80px;right:80px;bottom:26px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:16px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;
+}
+.foot b{color:var(--accent-2);font-weight:700;}
+
+h1.title{font-size:64px;line-height:1.04;font-weight:900;letter-spacing:-.02em;margin:18px 0 0;}
+h2.head{font-size:50px;line-height:1.05;font-weight:800;letter-spacing:-.015em;margin:14px 0 18px;}
+h2.head .lo{color:var(--accent);}
+.lead{font-size:var(--fs-body);line-height:1.5;color:var(--ink);max-width:62ch;}
+.muted{color:var(--muted);}
+
+/* bullets */
+ul.bul{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:16px;}
+ul.bul>li{position:relative;padding-left:40px;font-size:var(--fs-bullet);line-height:1.32;font-weight:600;}
+ul.bul>li::before{content:"";position:absolute;left:0;top:.55em;width:18px;height:18px;border-radius:5px;
+  background:var(--accent);box-shadow:0 0 0 5px rgba(255,106,0,.16);}
+ul.bul>li .sub{display:block;margin-top:6px;font-size:var(--fs-bullet-sub);font-weight:500;color:var(--muted);line-height:1.4;}
+
+/* caixa de destaque */
+.callout{
+  margin-top:20px;border:1px solid var(--code-border);border-left:6px solid var(--accent);
+  background:linear-gradient(180deg,rgba(255,106,0,.10),rgba(255,106,0,.03));
+  border-radius:14px;padding:20px 24px;font-size:var(--fs-callout);line-height:1.42;
+}
+.callout b{color:var(--accent-2);}
+
+/* código */
+.code{
+  background:var(--code-bg);border:1px solid var(--code-border);border-radius:14px;
+  padding:22px 26px;font-family:'JetBrains Mono',monospace;font-size:var(--fs-code);
+  line-height:1.5;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45);
+  white-space:pre;tab-size:4;
+}
+.code.sm{font-size:var(--fs-code-sm);}
+.code.tight{font-size:26px;line-height:1.3;padding:16px 24px;}
+.code.tight .winbar{margin:-2px 0 10px;}
+.code .winbar{display:flex;gap:9px;margin:-4px 0 16px;}
+.code .winbar i{width:13px;height:13px;border-radius:50%;display:inline-block;}
+.code .winbar i:nth-child(1){background:#ff5f56;}
+.code .winbar i:nth-child(2){background:#ffbd2e;}
+.code .winbar i:nth-child(3){background:#27c93f;}
+.code code{display:block;}
+/* syntax colors */
+.k{color:#FF8A3D;font-weight:600;}   /* keyword */
+.t{color:#FFD27A;}                    /* type */
+.s{color:#9ED49A;}                    /* string */
+.c{color:#7C746B;font-style:italic;}  /* comment */
+.n{color:#E7A6FF;}                     /* number */
+.fn{color:#7FC9FF;}                    /* function name */
+.pp{color:#A9A097;}                    /* preprocessor */
+
+/* layout duas colunas */
+.cols{display:grid;grid-template-columns:.8fr 1.2fr;gap:40px;align-items:start;}
+.cols.w55{grid-template-columns:1.05fr .95fr;}
+
+/* numero grande de slide / capa */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.cover .meta{margin-top:30px;display:flex;gap:40px;font-size:21px;color:var(--muted);}
+.cover .meta b{color:var(--ink);font-weight:700;}
+.cover .big{font-size:128px;font-weight:900;line-height:.9;letter-spacing:-.03em;}
+.cover .big em{font-style:normal;color:var(--accent);}
+
+/* divisor de seção */
+.divider{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.divider .num{font-family:'JetBrains Mono',monospace;font-size:30px;color:var(--accent-2);letter-spacing:.2em;}
+.divider h2{font-size:104px;font-weight:900;letter-spacing:-.03em;margin:10px 0 0;line-height:.95;}
+.divider h2 .dot{color:var(--accent);}
+.divider p{font-size:var(--fs-body);color:var(--muted);max-width:60ch;margin-top:20px;}
+
+/* mini tags */
+.tags{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.tag{font-size:18px;font-weight:700;letter-spacing:.04em;padding:8px 16px;border-radius:999px;
+  border:1px solid var(--code-border);color:var(--accent-2);background:rgba(255,106,0,.06);}
+
+/* lista de exercícios */
+ol.ex{counter-reset:e;list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 38px;}
+ol.ex>li{counter-increment:e;position:relative;padding-left:54px;font-size:23px;line-height:1.34;font-weight:500;}
+ol.ex>li::before{content:counter(e);position:absolute;left:0;top:-2px;width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;
+  font-size:20px;color:#131110;background:var(--accent);}
+ol.ex>li b{color:var(--accent-2);font-weight:700;}
+
+/* === extensões para esta aula: comparação com/sem e boxes de pilha === */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;}
+.duo .code{font-size:21px;line-height:1.45;padding:16px 20px;}
+.clabel{font-family:'Archivo';font-size:20px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:0 0 8px;}
+.stackbox{flex:1;text-align:center;border:1px solid var(--code-border);border-radius:14px;padding:18px 16px;background:rgba(255,106,0,.06);}
+.stackbox .arrow{font-size:46px;line-height:1;color:var(--accent);}
+.stackbox .lab{font-size:26px;font-weight:800;color:var(--accent-2);margin-top:4px;}
+.stackbox .desc{font-size:20px;color:var(--muted);margin-top:2px;}
+
+/* entrada animada */
+.slide.active .anim{animation:rise .6s cubic-bezier(.22,.7,.3,1) both;}
+.slide.active .anim:nth-child(2){animation-delay:.06s;}
+.slide.active .anim:nth-child(3){animation-delay:.12s;}
+.slide.active .anim:nth-child(4){animation-delay:.18s;}
+.slide.active .anim:nth-child(5){animation-delay:.24s;}
+@keyframes rise{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:none;}}
+
+/* controles */
+.deck-controls{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:1000;
+  display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-family:'Archivo';}
+.deck-controls button{all:unset;cursor:pointer;color:var(--ink);font-size:20px;width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.deck-controls button:hover{background:rgba(255,106,0,.2);}
+.deck-controls .count{font-family:'JetBrains Mono';font-size:15px;color:var(--muted);min-width:54px;text-align:center;}
+.progress{position:fixed;top:0;left:0;height:4px;background:var(--accent);z-index:1001;transition:width .3s;}
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="deck-viewport">
+  <div class="deck-stage" id="stage">
+
+  <!-- 1 · CAPA -->
+  <section class="slide active">
+    <div class="cover">
+      <div class="kicker anim">Programação Estruturada · BCC</div>
+      <div class="big anim" style="margin-top:24px;">Recur<em>são</em></div>
+      <div class="lead anim" style="margin-top:26px;max-width:54ch;">
+        Quando uma função chama a si mesma: o caso base, o caso recursivo e o que realmente
+        acontece na <span style="color:var(--accent-2);font-weight:700;">pilha de execução</span>.
+      </div>
+      <div class="meta anim">
+        <span>Prof. <b>François</b></span>
+        <span>Tema <b>Recursão</b></span>
+        <span>Linguagem <b>C</b></span>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b></span></div>
+  </section>
+
+  <!-- 2 · DIVISOR -->
+  <section class="slide">
+    <div class="divider">
+      <div class="num anim">RECURSÃO</div>
+      <h2 class="anim">Chamar a si mesma<span class="dot">.</span></h2>
+      <p class="anim">Técnica em que a solução de um problema depende da solução de versões
+        menores do mesmo problema.</p>
+      <div class="tags anim">
+        <span class="tag">caso base</span><span class="tag">caso recursivo</span>
+        <span class="tag">pilha</span><span class="tag">ida × volta</span>
+        <span class="tag">com × sem</span>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b></span></div>
+  </section>
+
+  <!-- 3 · O QUE É -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">O que é?</h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Uma função <b style="color:var(--accent-2)">recursiva</b> resolve um problema
+          chamando a si mesma para resolver uma versão menor dele.</p>
+        <div class="callout">O <b>salto de fé</b>: defino a solução supondo que a versão menor
+          já está resolvida.</div>
+      </div>
+      <div class="code sm"><div class="winbar"><i></i><i></i><i></i></div><code><span class="c">// soma chama a si mesma com n-1</span>
+<span class="t">int</span> <span class="fn">soma</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>)
+        <span class="k">return</span> <span class="n">0</span>;
+    <span class="k">return</span> n + <span class="fn">soma</span>(n - <span class="n">1</span>);
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · conceito</span></div>
+  </section>
+
+  <!-- 4 · OS DOIS INGREDIENTES -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">Os dois ingredientes</h2>
+    <div class="cols anim">
+      <div>
+        <ul class="bul">
+          <li>Caso base<span class="sub">Condição de parada — responde direto, sem se chamar.</span></li>
+          <li>Caso recursivo<span class="sub">A função se chama com um argumento menor.</span></li>
+        </ul>
+        <div class="callout">Sem caso base, a recursão <b>nunca para</b> → estouro de pilha
+          (stack overflow).</div>
+      </div>
+      <div class="code sm"><div class="winbar"><i></i><i></i><i></i></div><code><span class="t">int</span> <span class="fn">fatorial</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>)
+        <span class="k">return</span> <span class="n">1</span>;        <span class="c">// caso base</span>
+    <span class="k">return</span> n * <span class="fn">fatorial</span>(n - <span class="n">1</span>); <span class="c">// recursivo</span>
+}</code></div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · ingredientes</span></div>
+  </section>
+
+  <!-- 5 · NA MEMÓRIA -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">O que acontece na <span class="lo">memória</span></h2>
+    <div class="cols anim">
+      <div>
+        <p class="lead">Cada chamada cria um <b style="color:var(--accent-2)">registro de ativação</b>
+          (stack frame) na pilha:</p>
+        <ul class="bul" style="margin-top:14px;">
+          <li>Parâmetros e variáveis locais<span class="sub">Cada chamada tem o seu próprio n.</span></li>
+          <li>Endereço de retorno<span class="sub">Para onde voltar quando terminar.</span></li>
+        </ul>
+      </div>
+      <div style="display:flex;gap:24px;margin-top:6px;">
+        <div class="stackbox">
+          <div class="arrow">↓</div>
+          <div class="lab">IDA</div>
+          <div class="desc">a pilha cresce</div>
+        </div>
+        <div class="stackbox">
+          <div class="arrow">↑</div>
+          <div class="lab">VOLTA</div>
+          <div class="desc">a pilha desempilha</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · pilha</span></div>
+  </section>
+
+  <!-- 6 · A PILHA: fatorial(3) -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">A pilha — <span class="lo">fatorial(3)</span></h2>
+    <div class="code tight anim" style="max-width:none;font-size:22px;"><div class="winbar"><i></i><i></i><i></i></div><code><span class="c">// IDA — empilhando</span>
+<span class="fn">fatorial</span>(<span class="n">3</span>) → <span class="n">3</span> * <span class="fn">fatorial</span>(<span class="n">2</span>)
+  <span class="fn">fatorial</span>(<span class="n">2</span>) → <span class="n">2</span> * <span class="fn">fatorial</span>(<span class="n">1</span>)
+    <span class="fn">fatorial</span>(<span class="n">1</span>) → <span class="n">1</span> * <span class="fn">fatorial</span>(<span class="n">0</span>)
+      <span class="fn">fatorial</span>(<span class="n">0</span>) → <span class="k">return</span> <span class="n">1</span>   <span class="c">// caso base</span>
+
+<span class="c">// VOLTA — desempilhando (o cálculo acontece aqui)</span>
+<span class="fn">fatorial</span>(<span class="n">0</span>) = <span class="n">1</span>
+<span class="fn">fatorial</span>(<span class="n">1</span>) = <span class="n">1</span> * <span class="n">1</span> = <span class="n">1</span>
+<span class="fn">fatorial</span>(<span class="n">2</span>) = <span class="n">2</span> * <span class="n">1</span> = <span class="n">2</span>
+<span class="fn">fatorial</span>(<span class="n">3</span>) = <span class="n">3</span> * <span class="n">2</span> = <span class="n">6</span></code></div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · traço da pilha</span></div>
+  </section>
+
+  <!-- 7 · COM vs SEM: FATORIAL -->
+  <section class="slide">
+    <div class="kicker anim">Com vs. sem recursão</div>
+    <h2 class="head anim">Fatorial de n</h2>
+    <div class="duo anim">
+      <div>
+        <div class="clabel" style="color:var(--accent-2)">Com recursão</div>
+        <div class="code"><code><span class="t">int</span> <span class="fn">fatorial</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>)
+        <span class="k">return</span> <span class="n">1</span>;
+    <span class="k">return</span> n * <span class="fn">fatorial</span>(n - <span class="n">1</span>);
+}</code></div>
+      </div>
+      <div>
+        <div class="clabel" style="color:var(--muted)">Sem recursão (laço)</div>
+        <div class="code"><code><span class="t">int</span> <span class="fn">fatorial</span>(<span class="t">int</span> n) {
+    <span class="t">int</span> resultado = <span class="n">1</span>;
+    <span class="k">for</span> (<span class="t">int</span> i = <span class="n">1</span>; i &lt;= n; i++)
+        resultado = resultado * i;
+    <span class="k">return</span> resultado;
+}</code></div>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · com × sem</span></div>
+  </section>
+
+  <!-- 8 · COM vs SEM: SOMA -->
+  <section class="slide">
+    <div class="kicker anim">Com vs. sem recursão</div>
+    <h2 class="head anim">Somar de 1 até n</h2>
+    <div class="duo anim">
+      <div>
+        <div class="clabel" style="color:var(--accent-2)">Com recursão</div>
+        <div class="code"><code><span class="t">int</span> <span class="fn">soma</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>)
+        <span class="k">return</span> <span class="n">0</span>;
+    <span class="k">return</span> n + <span class="fn">soma</span>(n - <span class="n">1</span>);
+}</code></div>
+      </div>
+      <div>
+        <div class="clabel" style="color:var(--muted)">Sem recursão (laço)</div>
+        <div class="code"><code><span class="t">int</span> <span class="fn">soma</span>(<span class="t">int</span> n) {
+    <span class="t">int</span> total = <span class="n">0</span>;
+    <span class="k">for</span> (<span class="t">int</span> i = <span class="n">1</span>; i &lt;= n; i++)
+        total = total + i;
+    <span class="k">return</span> total;
+}</code></div>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · com × sem</span></div>
+  </section>
+
+  <!-- 9 · COM vs SEM: POTÊNCIA -->
+  <section class="slide">
+    <div class="kicker anim">Com vs. sem recursão</div>
+    <h2 class="head anim">Potência <span class="lo">(base^exp)</span></h2>
+    <div class="duo anim">
+      <div>
+        <div class="clabel" style="color:var(--accent-2)">Com recursão</div>
+        <div class="code"><code><span class="t">int</span> <span class="fn">potencia</span>(<span class="t">int</span> base, <span class="t">int</span> exp) {
+    <span class="k">if</span> (exp == <span class="n">0</span>)
+        <span class="k">return</span> <span class="n">1</span>;
+    <span class="k">return</span> base * <span class="fn">potencia</span>(base, exp - <span class="n">1</span>);
+}</code></div>
+      </div>
+      <div>
+        <div class="clabel" style="color:var(--muted)">Sem recursão (laço)</div>
+        <div class="code"><code><span class="t">int</span> <span class="fn">potencia</span>(<span class="t">int</span> base, <span class="t">int</span> exp) {
+    <span class="t">int</span> resultado = <span class="n">1</span>;
+    <span class="k">for</span> (<span class="t">int</span> i = <span class="n">0</span>; i &lt; exp; i++)
+        resultado = resultado * base;
+    <span class="k">return</span> resultado;
+}</code></div>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · com × sem</span></div>
+  </section>
+
+  <!-- 10 · COM vs SEM: CONTAR -->
+  <section class="slide">
+    <div class="kicker anim">Com vs. sem recursão</div>
+    <h2 class="head anim">Contar de n até 1</h2>
+    <div class="duo anim">
+      <div>
+        <div class="clabel" style="color:var(--accent-2)">Com recursão</div>
+        <div class="code"><code><span class="t">void</span> <span class="fn">contar</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>)
+        <span class="k">return</span>;
+    <span class="fn">printf</span>(<span class="s">"%d "</span>, n);
+    <span class="fn">contar</span>(n - <span class="n">1</span>);
+}</code></div>
+      </div>
+      <div>
+        <div class="clabel" style="color:var(--muted)">Sem recursão (laço)</div>
+        <div class="code"><code><span class="t">void</span> <span class="fn">contar</span>(<span class="t">int</span> n) {
+    <span class="k">for</span> (<span class="t">int</span> i = n; i &gt;= <span class="n">1</span>; i--)
+        <span class="fn">printf</span>(<span class="s">"%d "</span>, i);
+}</code></div>
+      </div>
+    </div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · com × sem</span></div>
+  </section>
+
+  <!-- 11 · IDA × VOLTA -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">O contraste de ouro <span class="lo">(ida × volta)</span></h2>
+    <div class="duo anim">
+      <div>
+        <div class="clabel" style="color:var(--accent-2)">printf na IDA</div>
+        <div class="code"><code><span class="t">void</span> <span class="fn">conta</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>) <span class="k">return</span>;
+    <span class="fn">printf</span>(<span class="s">"%d "</span>, n);
+    <span class="fn">conta</span>(n - <span class="n">1</span>);
+}
+<span class="c">// conta(5) → 5 4 3 2 1</span></code></div>
+      </div>
+      <div>
+        <div class="clabel" style="color:var(--accent-2)">printf na VOLTA</div>
+        <div class="code"><code><span class="t">void</span> <span class="fn">conta</span>(<span class="t">int</span> n) {
+    <span class="k">if</span> (n == <span class="n">0</span>) <span class="k">return</span>;
+    <span class="fn">conta</span>(n - <span class="n">1</span>);
+    <span class="fn">printf</span>(<span class="s">"%d "</span>, n);
+}
+<span class="c">// conta(5) → 1 2 3 4 5</span></code></div>
+      </div>
+    </div>
+    <div class="callout anim" style="margin-top:18px;">O <b>printf</b> da volta fica pendurado esperando a chamada de
+      baixo terminar — a pilha guarda os n na ordem reversa.</div>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · ida × volta</span></div>
+  </section>
+
+  <!-- 12 · TIPOS DE RECURSÃO -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">Tipos de recursão</h2>
+    <ul class="bul anim">
+      <li>Direta<span class="sub">A função chama a si mesma. (todos os exemplos até aqui)</span></li>
+      <li>Indireta<span class="sub">A chama B, que chama A — recursão não é só a função literal se chamar.</span></li>
+      <li>De cauda (tail)<span class="sub">A chamada recursiva é a última operação; alguns compiladores otimizam para um laço.</span></li>
+    </ul>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · tipos</span></div>
+  </section>
+
+  <!-- 13 · EXERCÍCIOS -->
+  <section class="slide">
+    <div class="kicker anim">Recursão</div>
+    <h2 class="head anim">Exercícios</h2>
+    <ol class="ex anim">
+      <li>Função recursiva que calcula o <b>fatorial</b> de n.</li>
+      <li>Função recursiva que soma os números de <b>1 até n</b>.</li>
+      <li>Função recursiva de <b>potência</b>: base elevado a expoente.</li>
+      <li>Função recursiva que imprime os números de <b>n até 1</b> e depois de <b>1 até n</b>.</li>
+      <li>Função recursiva que devolve o <b>n-ésimo termo de Fibonacci</b>.</li>
+      <li>Função recursiva que soma os <b>dígitos</b> de um número inteiro.</li>
+    </ol>
+    <div class="foot"><span>Prof. François Barbosa · PE · Recursão</span><span><b>Recursão</b> · exercícios</span></div>
+  </section>
+
+  </div>
+</div>
+
+<div class="deck-controls">
+  <button id="prev" aria-label="Anterior">‹</button>
+  <span class="count" id="count">1 / 13</span>
+  <button id="next" aria-label="Próximo">›</button>
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+const stage=document.getElementById('stage');
+const count=document.getElementById('count');
+const prog=document.getElementById('prog');
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  count.textContent=(i+1)+' / '+slides.length;
+  prog.style.width=((i+1)/slides.length*100)+'%';
+}
+function next(){show(i+1);}function prev(){show(i-1);}
+document.getElementById('next').onclick=next;
+document.getElementById('prev').onclick=prev;
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1);
+});
+stage.addEventListener('click',e=>{
+  if(e.clientX < window.innerWidth*0.35) prev(); else next();
+});
+function scaleStage(){
+  const s=Math.min(window.innerWidth/1280,window.innerHeight/720);
+  const x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2;
+  stage.style.transform=`translate(${x}px,${y}px) scale(${s})`;
+}
+window.addEventListener('resize',scaleStage);
+scaleStage();show(0);
+</script>
+</body>
+</html>
