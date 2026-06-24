@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>struct em C — Programação Estruturada</title>
+
+    <!-- Fonts: Bebas Neue (display) + IBM Plex Mono (code) + IBM Plex Sans (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===================================================
+           CSS CUSTOM PROPERTIES — BLOND SOLID THEME
+           Blond = areia/creme pesado. Solid = blocos pretos,
+           bordas firmes, sem delicadeza, cartaz construtivista.
+           =================================================== */
+        :root {
+            --blond:        #F5E6C3;   /* creme-areia principal */
+            --blond-dark:   #E8D49A;   /* areia mais saturada */
+            --ink:          #111111;   /* preto-tinta */
+            --amber:        #C8860A;   /* âmbar/ocre acento */
+            --amber-light:  #F5A623;   /* amarelo-âmbar vibrante */
+            --white:        #FDFAF3;   /* off-white quente */
+            --code-bg:      #1A1611;   /* fundo de código escuro */
+            --code-text:    #F5E6C3;   /* texto de código = blond */
+            --code-kw:      #F5A623;   /* keyword = amber */
+            --code-type:    #7EC8A0;   /* tipo = verde suave */
+            --code-str:     #E87D5A;   /* string = laranja */
+            --code-comment: #8A7B5A;   /* comentário */
+
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body:    'IBM Plex Sans', sans-serif;
+            --font-code:    'IBM Plex Mono', monospace;
+
+            --slide-pad: 80px;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --dur: 0.55s;
+        }
+
+        /* ===================================================
+           RESET
+           =================================================== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ===================================================
+           VIEWPORT BASE — FIXED 16:9 STAGE (1920×1080)
+           =================================================== */
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--ink);
+        }
+
+        .deck-viewport {
+            position: fixed; inset: 0;
+            overflow: hidden;
+            background: var(--ink);
+        }
+
+        .deck-stage {
+            position: absolute; left: 0; top: 0;
+            width: 1920px; height: 1080px;
+            overflow: hidden;
+            transform-origin: 0 0;
+        }
+
+        .slide {
+            position: absolute; inset: 0;
+            width: 1920px; height: 1080px;
+            overflow: hidden;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background: var(--blond);
+        }
+
+        .slide.active, .slide.visible {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+
+        .deck-controls {
+            position: fixed; left: 50%; bottom: 18px;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2ms !important;
+            }
+        }
+
+        /* ===================================================
+           REVEAL ANIMATIONS
+           =================================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity var(--dur) var(--ease),
+                        transform var(--dur) var(--ease);
+        }
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-40px);
+            transition: opacity var(--dur) var(--ease),
+                        transform var(--dur) var(--ease);
+        }
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity var(--dur) var(--ease),
+                        transform var(--dur) var(--ease);
+        }
+
+        .slide.visible .reveal,
+        .slide.visible .reveal-left,
+        .slide.visible .reveal-scale { opacity: 1; transform: none; }
+
+        .slide.visible .reveal:nth-child(1)  { transition-delay: 0.05s; }
+        .slide.visible .reveal:nth-child(2)  { transition-delay: 0.14s; }
+        .slide.visible .reveal:nth-child(3)  { transition-delay: 0.23s; }
+        .slide.visible .reveal:nth-child(4)  { transition-delay: 0.32s; }
+        .slide.visible .reveal:nth-child(5)  { transition-delay: 0.41s; }
+        .slide.visible .reveal:nth-child(6)  { transition-delay: 0.50s; }
+
+        /* ===================================================
+           SHARED LAYOUT HELPERS
+           =================================================== */
+        .slide-inner {
+            position: absolute; inset: 0;
+            padding: var(--slide-pad);
+            display: flex; flex-direction: column;
+        }
+
+        /* Solid black band used as header/label across slides */
+        .black-band {
+            background: var(--ink);
+            color: var(--blond);
+            font-family: var(--font-display);
+            letter-spacing: 0.06em;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* Amber accent bar — vertical or horizontal */
+        .amber-bar-v {
+            width: 10px;
+            background: var(--amber);
+            flex-shrink: 0;
+        }
+        .amber-bar-h {
+            height: 8px;
+            background: var(--amber);
+        }
+
+        /* Slide number pill — bottom right */
+        .slide-num {
+            position: absolute; bottom: 54px; right: 80px;
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: var(--amber);
+            letter-spacing: 0.1em;
+        }
+
+        /* ===================================================
+           CODE BLOCK — shared component
+           =================================================== */
+        .code-block {
+            background: var(--code-bg);
+            border-left: 8px solid var(--amber);
+            border-radius: 0 8px 8px 0;
+            padding: 32px 40px;
+            font-family: var(--font-code);
+            font-size: 26px;
+            line-height: 1.65;
+            color: var(--code-text);
+            white-space: pre;
+        }
+        .code-block .kw  { color: var(--code-kw); font-weight: 700; }
+        .code-block .tp  { color: var(--code-type); }
+        .code-block .str { color: var(--code-str); }
+        .code-block .cm  { color: var(--code-comment); font-style: italic; }
+
+        /* ===================================================
+           QUESTÃO LABEL — numbered badge
+           =================================================== */
+        .q-badge {
+            display: inline-flex; align-items: center; gap: 0;
+        }
+        .q-badge .num {
+            background: var(--amber);
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 52px;
+            width: 96px; height: 96px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .q-badge .label {
+            background: var(--ink);
+            color: var(--blond);
+            font-family: var(--font-display);
+            font-size: 36px;
+            padding: 0 32px;
+            height: 96px;
+            display: flex; align-items: center;
+            letter-spacing: 0.1em;
+        }
+
+        /* ===================================================
+           ENUNCIADO TEXT
+           =================================================== */
+        .enunciado {
+            font-family: var(--font-body);
+            font-size: 30px;
+            font-weight: 400;
+            color: var(--ink);
+            line-height: 1.6;
+        }
+        .enunciado strong {
+            font-weight: 800;
+            color: var(--amber);
+        }
+        .enunciado em {
+            font-family: var(--font-code);
+            font-style: normal;
+            font-size: 28px;
+            background: var(--ink);
+            color: var(--amber-light);
+            padding: 2px 10px;
+            border-radius: 4px;
+        }
+
+        /* Task list items */
+        .task-list {
+            list-style: none;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        .task-list li {
+            display: flex; align-items: flex-start; gap: 20px;
+            font-family: var(--font-body);
+            font-size: 30px;
+            color: var(--ink);
+            line-height: 1.5;
+        }
+        .task-list li::before {
+            content: attr(data-n);
+            background: var(--amber);
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 28px;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .task-list li em {
+            font-family: var(--font-code);
+            font-style: normal;
+            background: var(--ink);
+            color: var(--amber-light);
+            padding: 1px 8px;
+            border-radius: 3px;
+            font-size: 28px;
+        }
+        .task-list li strong { font-weight: 800; }
+
+        /* DICA box */
+        .dica-box {
+            border: 4px solid var(--amber);
+            padding: 28px 36px;
+            background: var(--white);
+            display: flex; flex-direction: column; gap: 14px;
+        }
+        .dica-box .dica-label {
+            font-family: var(--font-display);
+            font-size: 30px;
+            color: var(--amber);
+            letter-spacing: 0.12em;
+        }
+        .dica-box .dica-text {
+            font-family: var(--font-body);
+            font-size: 26px;
+            color: var(--ink);
+            line-height: 1.5;
+        }
+        .dica-box em {
+            font-family: var(--font-code);
+            font-style: normal;
+            background: var(--ink);
+            color: var(--amber-light);
+            padding: 1px 8px;
+            border-radius: 3px;
+        }
+
+        /* Section dividers */
+        .h-rule {
+            width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--amber) 0%, transparent 100%);
+        }
+
+        /* ===================================================
+           SLIDE 1 — CAPA / TITLE SLIDE
+           =================================================== */
+        .slide-capa {
+            background: var(--ink);
+        }
+
+        .capa-inner {
+            position: absolute; inset: 0;
+            display: flex;
+        }
+
+        /* Left thick amber stripe */
+        .capa-stripe {
+            width: 24px;
+            background: var(--amber);
+            flex-shrink: 0;
+        }
+
+        /* Left content panel */
+        .capa-left {
+            flex: 1;
+            padding: 80px 80px 80px 64px;
+            display: flex; flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .capa-tag {
+            font-family: var(--font-display);
+            font-size: 26px;
+            color: var(--amber);
+            letter-spacing: 0.2em;
+        }
+
+        .capa-title {
+            font-family: var(--font-display);
+            font-size: 200px;
+            line-height: 0.88;
+            color: var(--blond);
+            letter-spacing: -0.01em;
+        }
+
+        .capa-sub {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 36px;
+            color: var(--white);
+            letter-spacing: 0.04em;
+        }
+
+        .capa-meta {
+            font-family: var(--font-body);
+            font-size: 24px;
+            color: var(--code-comment);
+        }
+
+        /* Right panel — black + blond blocks */
+        .capa-right {
+            width: 580px;
+            background: var(--blond);
+            display: flex; flex-direction: column;
+        }
+
+        .capa-right-top {
+            flex: 1;
+            padding: 60px 56px;
+            display: flex; flex-direction: column;
+            justify-content: center;
+            gap: 28px;
+            border-bottom: 8px solid var(--amber);
+        }
+
+        .capa-right-item {
+            display: flex; align-items: center; gap: 20px;
+        }
+        .capa-right-item .dot {
+            width: 16px; height: 16px;
+            background: var(--amber);
+            flex-shrink: 0;
+        }
+        .capa-right-item span {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 26px;
+            color: var(--ink);
+        }
+
+        .capa-right-bottom {
+            height: 120px;
+            background: var(--amber);
+            display: flex; align-items: center;
+            padding: 0 56px;
+        }
+        .capa-right-bottom span {
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: var(--ink);
+            letter-spacing: 0.08em;
+        }
+
+        /* ===================================================
+           SLIDE 2 — INTRO: O QUE É UMA STRUCT
+           =================================================== */
+        .slide-intro {
+            background: var(--blond);
+        }
+
+        .intro-header {
+            display: flex; align-items: stretch; height: 110px; gap: 0;
+        }
+        .intro-header .black-band { font-size: 60px; padding: 0 48px; height: 110px; }
+
+        .intro-body {
+            flex: 1;
+            display: flex;
+            gap: 60px;
+            margin-top: 50px;
+        }
+
+        .intro-text-col {
+            flex: 1;
+            display: flex; flex-direction: column; gap: 36px;
+        }
+
+        .analogy-box {
+            background: var(--ink);
+            padding: 36px 40px;
+            display: flex; flex-direction: column; gap: 18px;
+        }
+        .analogy-box .analogy-label {
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: var(--amber);
+            letter-spacing: 0.1em;
+        }
+        .analogy-box p {
+            font-family: var(--font-body);
+            font-size: 28px;
+            color: var(--white);
+            line-height: 1.55;
+        }
+
+        .var-list {
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .var-row {
+            display: flex; align-items: center; gap: 0;
+        }
+        .var-row .type-tag {
+            background: var(--amber);
+            font-family: var(--font-code);
+            font-size: 22px;
+            color: var(--ink);
+            font-weight: 700;
+            padding: 6px 16px;
+            min-width: 90px;
+            text-align: center;
+        }
+        .var-row .name-tag {
+            background: var(--ink);
+            font-family: var(--font-code);
+            font-size: 22px;
+            color: var(--blond);
+            padding: 6px 16px;
+            flex: 1;
+        }
+        .var-row .desc-tag {
+            font-family: var(--font-body);
+            font-size: 22px;
+            color: var(--ink);
+            padding: 0 16px;
+        }
+
+        .arrow-big {
+            font-family: var(--font-display);
+            font-size: 80px;
+            color: var(--amber);
+            text-align: center;
+            line-height: 1;
+        }
+
+        .struct-visual {
+            background: var(--code-bg);
+            border: 4px solid var(--amber);
+            padding: 32px 36px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .struct-visual .sv-label {
+            font-family: var(--font-display);
+            font-size: 24px;
+            color: var(--amber);
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+        .struct-field {
+            display: flex; align-items: center; gap: 0; height: 40px;
+        }
+        .struct-field .sf-type {
+            background: rgba(197,134,10,0.25);
+            color: var(--code-type);
+            font-family: var(--font-code);
+            font-size: 22px;
+            padding: 0 14px;
+            width: 180px;
+            height: 100%;
+            display: flex; align-items: center;
+        }
+        .struct-field .sf-name {
+            background: rgba(255,255,255,0.05);
+            color: var(--code-text);
+            font-family: var(--font-code);
+            font-size: 22px;
+            padding: 0 14px;
+            flex: 1;
+            height: 100%;
+            display: flex; align-items: center;
+            border-left: 2px solid var(--amber);
+        }
+
+        /* ===================================================
+           SLIDE 3 — QUESTÃO 1
+           =================================================== */
+        .slide-q { background: var(--blond); }
+
+        .q-layout {
+            position: absolute; inset: 0;
+            display: flex;
+        }
+
+        /* Amber left stripe with rotated label */
+        .q-left-bar {
+            width: 80px;
+            background: var(--amber);
+            display: flex; align-items: center; justify-content: center;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: var(--ink);
+            letter-spacing: 0.2em;
+            flex-shrink: 0;
+        }
+
+        .q-main {
+            flex: 1;
+            padding: 64px 72px 64px 56px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .q-header {
+            display: flex; align-items: center; gap: 24px;
+        }
+
+        .q-title {
+            font-family: var(--font-display);
+            font-size: 52px;
+            color: var(--ink);
+            letter-spacing: 0.04em;
+            line-height: 1;
+        }
+
+        .q-body {
+            flex: 1;
+            display: flex;
+            gap: 60px;
+        }
+
+        .q-left { flex: 1; display: flex; flex-direction: column; gap: 28px; }
+        .q-right { width: 640px; display: flex; flex-direction: column; gap: 24px; }
+
+        /* ===================================================
+           SLIDE — SLIDE CONCEITO / EXPLICAÇÃO (typedef, nest, array)
+           =================================================== */
+        .concept-box {
+            background: var(--ink);
+            padding: 36px 40px;
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .concept-box .cb-title {
+            font-family: var(--font-display);
+            font-size: 30px;
+            color: var(--amber);
+            letter-spacing: 0.12em;
+        }
+        .concept-box p {
+            font-family: var(--font-body);
+            font-size: 27px;
+            color: var(--white);
+            line-height: 1.55;
+        }
+        .concept-box em {
+            font-family: var(--font-code);
+            font-style: normal;
+            color: var(--amber-light);
+        }
+
+        /* Comparison side-by-side */
+        .compare-cols {
+            display: flex; gap: 0;
+        }
+        .compare-col {
+            flex: 1;
+            display: flex; flex-direction: column;
+        }
+        .compare-col .col-header {
+            background: var(--ink);
+            padding: 16px 28px;
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: var(--blond);
+            letter-spacing: 0.1em;
+            text-align: center;
+        }
+        .compare-col:first-child .col-header { border-right: 4px solid var(--amber); }
+        .compare-col .col-body {
+            flex: 1;
+            background: var(--code-bg);
+            padding: 24px 28px;
+        }
+        .compare-col:first-child .col-body { border-right: 4px solid var(--amber); }
+
+        /* Nesting diagram */
+        .nest-diagram {
+            background: var(--code-bg);
+            border: 4px solid var(--amber);
+            padding: 28px 36px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .nest-outer {
+            border: 3px solid var(--amber);
+            padding: 16px 20px;
+            font-family: var(--font-code);
+            font-size: 22px;
+            color: var(--code-text);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .nest-outer .nest-label {
+            font-family: var(--font-display);
+            font-size: 24px;
+            color: var(--amber);
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+        .nest-inner {
+            border: 3px solid var(--code-type);
+            padding: 12px 16px;
+            margin-left: 20px;
+            font-family: var(--font-code);
+            font-size: 20px;
+            color: var(--code-text);
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .nest-inner .nest-label {
+            color: var(--code-type);
+            font-family: var(--font-display);
+            font-size: 22px;
+        }
+
+        /* Array visual */
+        .array-visual {
+            display: flex; gap: 6px; align-items: stretch;
+        }
+        .array-cell {
+            flex: 1;
+            background: var(--code-bg);
+            border: 3px solid var(--amber);
+            display: flex; flex-direction: column;
+            align-items: center;
+        }
+        .array-cell .cell-index {
+            background: var(--amber);
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 22px;
+            width: 100%;
+            text-align: center;
+            padding: 6px 0;
+        }
+        .array-cell .cell-body {
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 6px;
+            padding: 12px 8px;
+        }
+        .array-cell .cell-field {
+            font-family: var(--font-code);
+            font-size: 18px;
+            color: var(--code-text);
+            text-align: center;
+        }
+        .array-cell .cell-field.tp { color: var(--code-type); font-size: 16px; }
+
+        /* ===================================================
+           SLIDE FINAL — RESUMO
+           =================================================== */
+        .slide-resumo { background: var(--ink); }
+
+        .resumo-inner {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+        }
+
+        .resumo-header {
+            background: var(--amber);
+            padding: 36px 80px;
+            font-family: var(--font-display);
+            font-size: 64px;
+            color: var(--ink);
+            letter-spacing: 0.06em;
+        }
+
+        .resumo-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        .rg-cell {
+            padding: 44px 56px;
+            display: flex; flex-direction: column; gap: 16px;
+            border: 1px solid rgba(245,230,195,0.12);
+        }
+
+        .rg-cell:nth-child(1) { border-top: none; border-left: none; }
+        .rg-cell:nth-child(2) { border-top: none; border-right: none; }
+        .rg-cell:nth-child(3) { border-bottom: none; border-left: none; }
+        .rg-cell:nth-child(4) { border-bottom: none; border-right: none; }
+
+        .rg-num {
+            font-family: var(--font-display);
+            font-size: 80px;
+            color: var(--amber);
+            line-height: 1;
+        }
+
+        .rg-title {
+            font-family: var(--font-display);
+            font-size: 38px;
+            color: var(--blond);
+            letter-spacing: 0.06em;
+            line-height: 1.1;
+        }
+
+        .rg-desc {
+            font-family: var(--font-body);
+            font-size: 24px;
+            color: rgba(245,230,195,0.7);
+            line-height: 1.5;
+        }
+
+        .rg-desc em {
+            font-family: var(--font-code);
+            font-style: normal;
+            color: var(--amber-light);
+        }
+
+        /* ===================================================
+           PROGRESS BAR
+           =================================================== */
+        .progress-bar {
+            position: fixed;
+            bottom: 0; left: 0;
+            height: 5px;
+            background: var(--amber);
+            transition: width 0.4s var(--ease);
+            z-index: 2000;
+        }
+
+        /* ===================================================
+           SLIDE COUNTER (outside stage)
+           =================================================== */
+        .slide-counter {
+            position: fixed;
+            bottom: 18px; right: 28px;
+            font-family: var(--font-display);
+            font-size: 22px;
+            color: rgba(197,134,10,0.7);
+            letter-spacing: 0.1em;
+            z-index: 2000;
+        }
+
+        /* ===================================================
+           EDIT MODE
+           =================================================== */
+        .edit-hotzone {
+            position: fixed; top: 0; left: 0;
+            width: 80px; height: 80px;
+            z-index: 10000;
+            cursor: pointer;
+        }
+        .edit-toggle {
+            position: fixed; top: 18px; left: 18px;
+            background: var(--amber); color: var(--ink);
+            border: none; border-radius: 4px;
+            padding: 8px 14px; font-size: 18px;
+            cursor: pointer; z-index: 10001;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            font-family: var(--font-body); font-weight: 700;
+        }
+        .edit-toggle.show, .edit-toggle.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .edit-mode-indicator {
+            position: fixed; top: 18px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--amber); color: var(--ink);
+            font-family: var(--font-display); font-size: 22px;
+            padding: 8px 24px; letter-spacing: 0.1em;
+            z-index: 10002; display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+    <!-- =============================================
+         SLIDE 1 — CAPA
+         ============================================= -->
+    <section class="slide slide-capa active" id="slide-1">
+        <div class="capa-inner">
+            <div class="capa-stripe"></div>
+
+            <div class="capa-left">
+                <span class="capa-tag reveal">IFMA — CAMPUS CAXIAS · BCC · PROGRAMAÇÃO ESTRUTURADA</span>
+
+                <div>
+                    <div class="capa-title reveal">STRUCT<br>EM C</div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div class="capa-sub reveal">Sistema de Biblioteca — 4 Questões Progressivas</div>
+                    <div class="capa-meta reveal">1° Período · Linguagem C · Sem ponteiros · Com funções</div>
+                </div>
+            </div>
+
+            <div class="capa-right">
+                <div class="capa-right-top">
+                    <div class="capa-right-item reveal">
+                        <div class="dot"></div>
+                        <span>Q1 — Criando uma struct</span>
+                    </div>
+                    <div class="capa-right-item reveal">
+                        <div class="dot"></div>
+                        <span>Q2 — Definindo o tipo com typedef</span>
+                    </div>
+                    <div class="capa-right-item reveal">
+                        <div class="dot"></div>
+                        <span>Q3 — Struct aninhada</span>
+                    </div>
+                    <div class="capa-right-item reveal">
+                        <div class="dot"></div>
+                        <span>Q4 — Array de structs</span>
+                    </div>
+                </div>
+                <div class="capa-right-bottom">
+                    <span class="reveal">BIBLIOTECA.C</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 2 — O QUE É UMA STRUCT?
+         ============================================= -->
+    <section class="slide slide-intro" id="slide-2">
+        <div class="slide-inner">
+            <!-- Header -->
+            <div class="intro-header">
+                <div class="black-band amber-bar-v" style="width:10px;background:var(--amber);"></div>
+                <div class="black-band" style="font-size:58px;padding:0 48px;">O QUE É UMA STRUCT?</div>
+            </div>
+
+            <div class="intro-body">
+                <!-- Left: explicação -->
+                <div class="intro-text-col">
+                    <div class="analogy-box reveal">
+                        <div class="analogy-label">💡 ANALOGIA</div>
+                        <p>Imagine uma <strong>ficha de livro</strong> em uma biblioteca física. Ela contém <strong>título, ano e preço</strong> juntos — não em fichas separadas. A <em>struct</em> faz exatamente isso em C.</p>
+                    </div>
+
+                    <div class="reveal" style="display:flex;flex-direction:column;gap:12px;">
+                        <div class="enunciado" style="font-size:26px;color:var(--ink);">
+                            <strong>Problema:</strong> guardar 3 dados separados é repetitivo e desorganizado:
+                        </div>
+                        <div class="var-list">
+                            <div class="var-row">
+                                <span class="type-tag">char</span>
+                                <span class="name-tag">titulo[100]</span>
+                                <span class="desc-tag">↦ pertence ao livro</span>
+                            </div>
+                            <div class="var-row">
+                                <span class="type-tag">int</span>
+                                <span class="name-tag">ano</span>
+                                <span class="desc-tag">↦ pertence ao livro</span>
+                            </div>
+                            <div class="var-row">
+                                <span class="type-tag">float</span>
+                                <span class="name-tag">preco</span>
+                                <span class="desc-tag">↦ pertence ao livro</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="arrow-big reveal">↓</div>
+                    <div class="enunciado reveal" style="font-size:27px;">
+                        Com <em>struct</em>, você cria um <strong>novo tipo</strong> que agrupa tudo. O operador <em>.</em> acessa cada campo: <em>livro1.ano = 2020;</em>
+                    </div>
+                </div>
+
+                <!-- Right: struct visual -->
+                <div style="display:flex;flex-direction:column;gap:28px;width:640px;">
+                    <div class="struct-visual reveal-scale">
+                        <div class="sv-label">STRUCT LIVRO — "FICHA"</div>
+                        <div class="struct-field">
+                            <div class="sf-type">char</div>
+                            <div class="sf-name">titulo[100]</div>
+                        </div>
+                        <div class="struct-field" style="margin-top:6px;">
+                            <div class="sf-type">int</div>
+                            <div class="sf-name">ano</div>
+                        </div>
+                        <div class="struct-field" style="margin-top:6px;">
+                            <div class="sf-type">float</div>
+                            <div class="sf-name">preco</div>
+                        </div>
+                    </div>
+
+                    <div class="code-block reveal" style="font-size:23px;">
+<span class="kw">struct</span> <span class="tp">Livro</span> {
+    <span class="tp">char</span>  titulo[<span class="str">100</span>];
+    <span class="tp">int</span>   ano;
+    <span class="tp">float</span> preco;
+};
+
+<span class="cm">// Declarar e usar:</span>
+<span class="kw">struct</span> <span class="tp">Livro</span> livro1;
+livro1.ano = <span class="str">2020</span>;</div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num">02 / 08</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 3 — QUESTÃO 1
+         ============================================= -->
+    <section class="slide slide-q" id="slide-3">
+        <div class="q-layout">
+            <div class="q-left-bar">QUESTÃO 1</div>
+
+            <div class="q-main">
+                <div class="q-header">
+                    <div class="q-badge reveal">
+                        <div class="num">1</div>
+                        <div class="label">CRIANDO UMA STRUCT</div>
+                    </div>
+                    <div class="amber-bar-h reveal" style="flex:1;height:8px;"></div>
+                </div>
+
+                <div class="q-body">
+                    <div class="q-left">
+                        <div class="enunciado reveal">
+                            Crie uma <em>struct Livro</em> com os campos abaixo. Em seguida, escreva uma função <em>cadastrarLivro</em> que lê os dados do teclado com <strong>scanf</strong> e retorna a struct preenchida. No <em>main</em>, chame a função e exiba os dados.
+                        </div>
+
+                        <div class="h-rule reveal"></div>
+
+                        <ul class="task-list">
+                            <li data-n="1" class="reveal">Campo <em>titulo</em> — <strong>string</strong> de até 100 caracteres</li>
+                            <li data-n="2" class="reveal">Campo <em>ano</em> — <strong>número inteiro</strong></li>
+                            <li data-n="3" class="reveal">Campo <em>preco</em> — <strong>número com casas decimais</strong></li>
+                            <li data-n="4" class="reveal">Função <em>cadastrarLivro</em> lê e <strong>retorna</strong> a struct</li>
+                            <li data-n="5" class="reveal">No <em>main</em>: chamar a função e <strong>exibir</strong> os dados</li>
+                        </ul>
+
+                        <div class="dica-box reveal">
+                            <div class="dica-label">💡 DICA — ASSINATURA DA FUNÇÃO</div>
+                            <div class="dica-text">
+                                <em>struct Livro cadastrarLivro(void);</em><br>
+                                Não recebe nada e <strong>devolve a struct inteira por valor</strong> — como retornar um int ou float.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="q-right">
+                        <div class="code-block reveal" style="font-size:24px;flex:1;">
+<span class="kw">struct</span> <span class="tp">Livro</span> {
+    <span class="cm">/* seus campos aqui */</span>
+};
+
+<span class="kw">struct</span> <span class="tp">Livro</span> cadastrarLivro(<span class="tp">void</span>) {
+    <span class="kw">struct</span> <span class="tp">Livro</span> l;
+
+    <span class="cm">/* leia os campos com scanf */</span>
+
+    <span class="kw">return</span> l;
+}
+
+<span class="tp">int</span> main(<span class="tp">void</span>) {
+    <span class="kw">struct</span> <span class="tp">Livro</span> livro = cadastrarLivro();
+
+    <span class="cm">/* exiba os campos do livro */</span>
+
+    <span class="kw">return</span> <span class="str">0</span>;
+}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num">03 / 08</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 4 — CONCEITO: TYPEDEF
+         ============================================= -->
+    <section class="slide slide-q" id="slide-4">
+        <div class="q-layout">
+            <div class="q-left-bar" style="background:var(--ink);color:var(--amber);">CONCEITO</div>
+            <div class="q-main">
+                <div class="q-header">
+                    <div style="background:var(--ink);padding:0 40px;height:96px;display:flex;align-items:center;" class="reveal">
+                        <span style="font-family:var(--font-display);font-size:52px;color:var(--blond);letter-spacing:0.06em;">O QUE É <span style="color:var(--amber);">TYPEDEF</span>?</span>
+                    </div>
+                    <div class="amber-bar-h reveal" style="flex:1;"></div>
+                </div>
+
+                <div class="q-body">
+                    <div class="q-left" style="gap:32px;">
+                        <div class="concept-box reveal">
+                            <div class="cb-title">PROBLEMA</div>
+                            <p>Sem <em>typedef</em>, você escreve <em>struct Livro</em> em todo lugar — na declaração de variável, no retorno de função, nos parâmetros. Fica verboso e repetitivo.</p>
+                        </div>
+
+                        <div class="concept-box reveal" style="border-left:6px solid var(--amber);">
+                            <div class="cb-title">SOLUÇÃO: TYPEDEF</div>
+                            <p><em>typedef</em> cria um <strong>apelido</strong> para um tipo existente. Depois, <em>Livro</em> funciona exatamente como <em>int</em> ou <em>float</em> — sem precisar escrever <em>struct</em> na frente.</p>
+                        </div>
+
+                        <div class="dica-box reveal">
+                            <div class="dica-label">✅ REGRA PRÁTICA</div>
+                            <div class="dica-text">Sempre que usar uma struct mais de duas vezes, crie um <em>typedef</em>. Seu código fica mais limpo e fácil de ler.</div>
+                        </div>
+                    </div>
+
+                    <div class="q-right" style="gap:20px;">
+                        <div class="compare-cols reveal" style="flex:1;">
+                            <div class="compare-col">
+                                <div class="col-header">SEM TYPEDEF</div>
+                                <div class="col-body">
+                                    <div class="code-block" style="border:none;background:transparent;font-size:20px;padding:0;">
+<span class="kw">struct</span> <span class="tp">Livro</span> {
+    <span class="tp">char</span>  titulo[<span class="str">100</span>];
+    <span class="tp">int</span>   ano;
+};
+
+<span class="kw">struct</span> <span class="tp">Livro</span> l1;
+<span class="kw">struct</span> <span class="tp">Livro</span> l2;
+
+<span class="kw">struct</span> <span class="tp">Livro</span> ler(<span class="tp">void</span>);
+<span class="tp">void</span> ver(<span class="kw">struct</span> <span class="tp">Livro</span> l);</div>
+                                </div>
+                            </div>
+                            <div class="compare-col">
+                                <div class="col-header" style="background:var(--amber);color:var(--ink);">COM TYPEDEF ✓</div>
+                                <div class="col-body" style="border-left:4px solid var(--amber);">
+                                    <div class="code-block" style="border:none;background:transparent;font-size:20px;padding:0;">
+<span class="kw">typedef</span> <span class="kw">struct</span> {
+    <span class="tp">char</span>  titulo[<span class="str">100</span>];
+    <span class="tp">int</span>   ano;
+} <span class="tp">Livro</span>; <span class="cm">// apelido!</span>
+
+<span class="tp">Livro</span> l1;
+<span class="tp">Livro</span> l2;
+
+<span class="tp">Livro</span> ler(<span class="tp">void</span>);
+<span class="tp">void</span>  ver(<span class="tp">Livro</span> l);</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num">04 / 08</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 5 — QUESTÃO 2
+         ============================================= -->
+    <section class="slide slide-q" id="slide-5">
+        <div class="q-layout">
+            <div class="q-left-bar">QUESTÃO 2</div>
+            <div class="q-main">
+                <div class="q-header">
+                    <div class="q-badge reveal">
+                        <div class="num">2</div>
+                        <div class="label">TYPEDEF — APELIDO PARA O TIPO</div>
+                    </div>
+                    <div class="amber-bar-h reveal" style="flex:1;"></div>
+                </div>
+
+                <div class="q-body">
+                    <div class="q-left">
+                        <div class="enunciado reveal">
+                            Reescreva o código da Questão 1 usando <em>typedef</em> para que você possa declarar variáveis simplesmente como <em>Livro livro1;</em> — sem precisar escrever <em>struct</em> toda vez.
+                        </div>
+                        <div class="h-rule reveal"></div>
+                        <ul class="task-list">
+                            <li data-n="1" class="reveal">Reescrever a struct com <em>typedef struct { ... } Livro;</em></li>
+                            <li data-n="2" class="reveal">Manter a função <em>cadastrarLivro</em> com o tipo atualizado</li>
+                            <li data-n="3" class="reveal">Criar a função <em>exibirLivro</em> que recebe um <em>Livro</em> e imprime todos os campos <strong>formatados</strong></li>
+                            <li data-n="4" class="reveal">No <em>main</em>: chamar as <strong>duas funções</strong> em sequência</li>
+                        </ul>
+                        <div class="dica-box reveal">
+                            <div class="dica-label">💡 DICA — ASSINATURAS</div>
+                            <div class="dica-text">
+                                <em>Livro cadastrarLivro(void);</em><br>
+                                <em>void exibirLivro(Livro l);</em><br><br>
+                                <em>exibirLivro</em> recebe uma <strong>cópia</strong> da ficha e apenas exibe — por isso retorna <em>void</em>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="q-right">
+                        <div class="code-block reveal" style="font-size:20px;flex:1;">
+<span class="kw">typedef</span> <span class="kw">struct</span> {
+    <span class="cm">/* seus campos aqui */</span>
+} <span class="tp">Livro</span>;
+
+<span class="tp">Livro</span> cadastrarLivro(<span class="tp">void</span>) {
+    <span class="tp">Livro</span> l;
+    <span class="cm">/* leia os campos com scanf */</span>
+    <span class="kw">return</span> l;
+}
+
+<span class="tp">void</span> exibirLivro(<span class="tp">Livro</span> l) {
+    <span class="cm">/* imprima os campos */</span>
+}
+
+<span class="tp">int</span> main(<span class="tp">void</span>) {
+    <span class="tp">Livro</span> livro = cadastrarLivro();
+    exibirLivro(livro);
+    <span class="kw">return</span> <span class="str">0</span>;
+}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num">05 / 08</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 6 — QUESTÃO 3 (aninhamento)
+         ============================================= -->
+    <section class="slide slide-q" id="slide-6">
+        <div class="q-layout">
+            <div class="q-left-bar">QUESTÃO 3</div>
+            <div class="q-main">
+                <div class="q-header">
+                    <div class="q-badge reveal">
+                        <div class="num">3</div>
+                        <div class="label">STRUCT ANINHADA — AUTOR DENTRO DE LIVRO</div>
+                    </div>
+                    <div class="amber-bar-h reveal" style="flex:1;"></div>
+                </div>
+
+                <div class="q-body">
+                    <div class="q-left" style="gap:22px;">
+                        <div class="enunciado reveal">
+                            Crie uma <em>typedef struct</em> chamada <em>Autor</em> com <em>nome</em> e <em>nacionalidade</em>. Aninhe <em>Autor</em> dentro de <em>Livro</em> como um campo. Acesso: <em>l.autor.nome</em>
+                        </div>
+
+                        <ul class="task-list" style="gap:14px;">
+                            <li data-n="1" class="reveal">Criar <em>typedef struct Autor</em> com <em>nome[80]</em> e <em>nacionalidade[50]</em></li>
+                            <li data-n="2" class="reveal">Adicionar campo <em>Autor autor;</em> dentro de <em>Livro</em></li>
+                            <li data-n="3" class="reveal">Função <em>cadastrarAutor(void)</em> — lê e retorna um <em>Autor</em></li>
+                            <li data-n="4" class="reveal">Função <em>cadastrarLivro</em> chama <em>cadastrarAutor</em> internamente</li>
+                            <li data-n="5" class="reveal">Função <em>exibirLivro</em> mostra também os campos do autor</li>
+                        </ul>
+
+                        <div class="dica-box reveal">
+                            <div class="dica-label">💡 DICA — ASSINATURAS</div>
+                            <div class="dica-text">
+                                <em>Autor cadastrarAutor(void);</em><br>
+                                <em>Livro cadastrarLivro(void);</em><br>
+                                <em>void exibirLivro(Livro l);</em><br><br>
+                                Dentro de <em>cadastrarLivro</em>: &nbsp;<em>l.autor = cadastrarAutor();</em>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="q-right" style="gap:20px;">
+                        <div class="code-block reveal" style="font-size:19px;flex:1;">
+<span class="kw">typedef</span> <span class="kw">struct</span> {
+    <span class="tp">char</span> nome[<span class="str">80</span>];
+    <span class="tp">char</span> nacionalidade[<span class="str">50</span>];
+} <span class="tp">Autor</span>;
+
+<span class="kw">typedef</span> <span class="kw">struct</span> {
+    <span class="tp">char</span>  titulo[<span class="str">100</span>];
+    <span class="tp">int</span>   ano;
+    <span class="tp">float</span> preco;
+    <span class="tp">Autor</span> autor; <span class="cm">// struct dentro da struct</span>
+} <span class="tp">Livro</span>;
+
+<span class="tp">Autor</span> cadastrarAutor(<span class="tp">void</span>) {
+    <span class="tp">Autor</span> a;
+    <span class="cm">/* leia nome e nacionalidade */</span>
+    <span class="kw">return</span> a;
+}
+
+<span class="tp">Livro</span> cadastrarLivro(<span class="tp">void</span>) {
+    <span class="tp">Livro</span> l;
+    <span class="cm">/* leia titulo, ano, preco */</span>
+    l.autor = cadastrarAutor();
+    <span class="kw">return</span> l;
+}
+
+<span class="cm">// Acesso aninhado:</span>
+<span class="cm">// l.autor.nome</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num">06 / 08</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 7 — QUESTÃO 4 (array)
+         ============================================= -->
+    <section class="slide slide-q" id="slide-7">
+        <div class="q-layout">
+            <div class="q-left-bar">QUESTÃO 4</div>
+            <div class="q-main">
+                <div class="q-header">
+                    <div class="q-badge reveal">
+                        <div class="num">4</div>
+                        <div class="label">ARRAY DE STRUCTS — O ACERVO</div>
+                    </div>
+                    <div class="amber-bar-h reveal" style="flex:1;"></div>
+                </div>
+
+                <div class="q-body">
+                    <div class="q-left" style="gap:20px;">
+                        <div class="enunciado reveal">
+                            Use todas as definições anteriores. O programa cadastra <strong>vários livros</strong> em um array e oferece três operações via funções.
+                        </div>
+
+                        <div class="array-visual reveal-scale">
+                            <div class="array-cell">
+                                <div class="cell-index">[0]</div>
+                                <div class="cell-body">
+                                    <div class="cell-field tp">Livro</div>
+                                    <div class="cell-field">titulo</div>
+                                    <div class="cell-field">ano</div>
+                                    <div class="cell-field">preco</div>
+                                    <div class="cell-field">autor</div>
+                                </div>
+                            </div>
+                            <div class="array-cell">
+                                <div class="cell-index">[1]</div>
+                                <div class="cell-body">
+                                    <div class="cell-field tp">Livro</div>
+                                    <div class="cell-field">titulo</div>
+                                    <div class="cell-field">ano</div>
+                                    <div class="cell-field">preco</div>
+                                    <div class="cell-field">autor</div>
+                                </div>
+                            </div>
+                            <div class="array-cell">
+                                <div class="cell-index">[2]</div>
+                                <div class="cell-body">
+                                    <div class="cell-field tp">Livro</div>
+                                    <div class="cell-field">titulo</div>
+                                    <div class="cell-field">ano</div>
+                                    <div class="cell-field">preco</div>
+                                    <div class="cell-field">autor</div>
+                                </div>
+                            </div>
+                            <div class="array-cell">
+                                <div class="cell-index">[3]</div>
+                                <div class="cell-body">
+                                    <div class="cell-field tp">Livro</div>
+                                    <div class="cell-field">titulo</div>
+                                    <div class="cell-field">ano</div>
+                                    <div class="cell-field">preco</div>
+                                    <div class="cell-field">autor</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <ul class="task-list" style="gap:12px;">
+                            <li data-n="1" class="reveal">Perguntar quantos livros (máx. 4) e declarar <em>Livro acervo[4];</em></li>
+                            <li data-n="2" class="reveal"><em>cadastrarTodos(acervo, n)</em> — preenche cada posição do array</li>
+                            <li data-n="3" class="reveal"><em>exibirTodos(acervo, n)</em> — mostra todos os livros</li>
+                            <li data-n="4" class="reveal"><em>buscarMaisCaro(acervo, n)</em> — retorna o livro com maior preço</li>
+                        </ul>
+                    </div>
+
+                    <div class="q-right" style="gap:16px;">
+                        <div class="dica-box reveal" style="padding:20px 28px;gap:10px;">
+                            <div class="dica-label" style="font-size:24px;">💡 DICA — ASSINATURAS</div>
+                            <div class="dica-text" style="font-size:20px;">
+                                <em>void  cadastrarTodos(Livro acervo[], int n);</em><br>
+                                <em>void  exibirTodos(Livro acervo[], int n);</em><br>
+                                <em>Livro buscarMaisCaro(Livro acervo[], int n);</em>
+                            </div>
+                        </div>
+
+                        <!-- Visual explanation of buscarMaisCaro -->
+                        <div class="concept-box reveal" style="gap:14px;padding:28px 32px;">
+                            <div class="cb-title" style="font-size:24px;">🔍 COMO ENCONTRAR O MAIS CARO</div>
+                            <p style="font-size:21px;">
+                                <strong style="color:var(--amber-light);">Passo 1 —</strong>
+                                Assuma que <em>acervo[0]</em> é o mais caro.<br>
+                                <em>Livro maisCaro = acervo[0];</em>
+                            </p>
+                            <p style="font-size:21px;">
+                                <strong style="color:var(--amber-light);">Passo 2 —</strong>
+                                Percorra com <em>for</em> a partir do índice <em>1</em>.
+                            </p>
+                            <p style="font-size:21px;">
+                                <strong style="color:var(--amber-light);">Passo 3 —</strong>
+                                Compare: <em>acervo[i].preco &gt; maisCaro.preco</em>?<br>
+                                Se sim, atualize: <em>maisCaro = acervo[i];</em>
+                            </p>
+                            <p style="font-size:21px;">
+                                <strong style="color:var(--amber-light);">Passo 4 —</strong>
+                                Ao sair do loop, retorne <em>maisCaro</em> por valor — <strong>sem ponteiro</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-num">07 / 08</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 8 — RESUMO FINAL
+         ============================================= -->
+    <section class="slide slide-resumo" id="slide-8">
+        <div class="resumo-inner">
+            <div class="resumo-header reveal">
+                PROGRESSÃO DAS QUESTÕES
+            </div>
+
+            <div class="resumo-grid">
+                <div class="rg-cell">
+                    <div class="rg-num reveal">01</div>
+                    <div class="rg-title reveal">CRIANDO UMA STRUCT</div>
+                    <div class="rg-desc reveal">
+                        Declare <em>struct Livro</em> com campos. Escreva <em>cadastrarLivro(void)</em> que usa <em>scanf</em> e retorna a struct preenchida.
+                    </div>
+                </div>
+
+                <div class="rg-cell">
+                    <div class="rg-num reveal">02</div>
+                    <div class="rg-title reveal">TYPEDEF — APELIDO</div>
+                    <div class="rg-desc reveal">
+                        Reescreva com <em>typedef</em> para usar <em>Livro l;</em> sem <em>struct</em>. Acrescente <em>exibirLivro(Livro l)</em> para impressão formatada.
+                    </div>
+                </div>
+
+                <div class="rg-cell">
+                    <div class="rg-num reveal">03</div>
+                    <div class="rg-title reveal">STRUCT ANINHADA</div>
+                    <div class="rg-desc reveal">
+                        Crie <em>Autor</em> e aninhe dentro de <em>Livro</em>. Acesso com ponto duplo: <em>l.autor.nome</em>. Função <em>cadastrarAutor(void)</em> separada.
+                    </div>
+                </div>
+
+                <div class="rg-cell">
+                    <div class="rg-num reveal">04</div>
+                    <div class="rg-title reveal">ARRAY DE STRUCTS</div>
+                    <div class="rg-desc reveal">
+                        <em>Livro acervo[20]</em> com três funções: <em>cadastrarTodos</em>, <em>exibirTodos</em> e <em>buscarMaisCaro</em> — tudo sem ponteiros.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+</div>
+
+<!-- Progress bar (outside stage) -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Slide counter (outside stage) -->
+<div class="slide-counter" id="slideCounter">01 / 08</div>
+
+<!-- Edit mode controls -->
+<div class="edit-hotzone" id="editHotzone"></div>
+<button class="edit-toggle" id="editToggle">✏ EDITAR</button>
+<div class="edit-mode-indicator" id="editIndicator">MODO EDIÇÃO — CTRL+S PARA SALVAR</div>
+
+<script>
+    /* ===================================================
+       SLIDE PRESENTATION CONTROLLER — BLOND SOLID
+       =================================================== */
+    class SlidePresentation {
+        constructor() {
+            this.slides      = document.querySelectorAll('.slide');
+            this.total       = this.slides.length;
+            this.current     = 0;
+            this.stage       = document.getElementById('deckStage');
+            this.progressBar = document.getElementById('progressBar');
+            this.counter     = document.getElementById('slideCounter');
+
+            this.setupStageScale();
+            this.setupKeyboardNav();
+            this.setupTouchNav();
+            this.setupWheelNav();
+            this.showSlide(0);
+        }
+
+        /* Scale the 1920×1080 stage to fill the viewport */
+        setupStageScale() {
+            const scale = () => {
+                const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                const x = (window.innerWidth  - 1920 * factor) / 2;
+                const y = (window.innerHeight - 1080 * factor) / 2;
+                this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+            };
+            scale();
+            window.addEventListener('resize', scale);
+        }
+
+        setupKeyboardNav() {
+            document.addEventListener('keydown', (e) => {
+                if (e.target.getAttribute('contenteditable')) return;
+                if (['ArrowRight','ArrowDown','Space','PageDown'].includes(e.code)) {
+                    e.preventDefault(); this.next();
+                } else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.code)) {
+                    e.preventDefault(); this.prev();
+                } else if (e.key === 'Home') {
+                    e.preventDefault(); this.showSlide(0);
+                } else if (e.key === 'End') {
+                    e.preventDefault(); this.showSlide(this.total - 1);
+                }
+            });
+        }
+
+        setupTouchNav() {
+            let startX = 0, startY = 0;
+            document.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }, { passive: true });
+            document.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].clientX - startX;
+                const dy = e.changedTouches[0].clientY - startY;
+                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+                    dx < 0 ? this.next() : this.prev();
+                }
+            }, { passive: true });
+        }
+
+        setupWheelNav() {
+            let lastWheel = 0;
+            document.addEventListener('wheel', e => {
+                e.preventDefault();
+                const now = Date.now();
+                if (now - lastWheel < 600) return;
+                lastWheel = now;
+                e.deltaY > 0 ? this.next() : this.prev();
+            }, { passive: false });
+        }
+
+        showSlide(index) {
+            this.current = Math.max(0, Math.min(index, this.total - 1));
+
+            this.slides.forEach((slide, i) => {
+                const isActive = i === this.current;
+                slide.classList.toggle('active', isActive);
+                /* Delay visible class so CSS transition fires */
+                if (isActive) {
+                    requestAnimationFrame(() => {
+                        setTimeout(() => slide.classList.add('visible'), 20);
+                    });
+                } else {
+                    slide.classList.remove('visible');
+                }
+            });
+
+            /* Update progress bar */
+            const pct = ((this.current + 1) / this.total) * 100;
+            this.progressBar.style.width = pct + '%';
+
+            /* Update counter */
+            const n = String(this.current + 1).padStart(2, '0');
+            const t = String(this.total).padStart(2, '0');
+            this.counter.textContent = `${n} / ${t}`;
+        }
+
+        next() { this.showSlide(this.current + 1); }
+        prev() { this.showSlide(this.current - 1); }
+    }
+
+    /* ===================================================
+       INLINE EDITOR
+       =================================================== */
+    class InlineEditor {
+        constructor() {
+            this.isActive  = false;
+            this.editables = [];
+            this.toggle    = document.getElementById('editToggle');
+            this.indicator = document.getElementById('editIndicator');
+            this.hotzone   = document.getElementById('editHotzone');
+            this.hideTimeout = null;
+
+            this.setupHotzone();
+            this.setupKeyShortcuts();
+            this.toggle.addEventListener('click', () => this.toggleEditMode());
+        }
+
+        setupHotzone() {
+            this.hotzone.addEventListener('mouseenter', () => {
+                clearTimeout(this.hideTimeout);
+                this.toggle.classList.add('show');
+            });
+            this.hotzone.addEventListener('mouseleave', () => {
+                this.hideTimeout = setTimeout(() => {
+                    if (!this.isActive) this.toggle.classList.remove('show');
+                }, 400);
+            });
+            this.toggle.addEventListener('mouseenter', () => clearTimeout(this.hideTimeout));
+            this.toggle.addEventListener('mouseleave', () => {
+                this.hideTimeout = setTimeout(() => {
+                    if (!this.isActive) this.toggle.classList.remove('show');
+                }, 400);
+            });
+            this.hotzone.addEventListener('click', () => this.toggleEditMode());
+        }
+
+        setupKeyShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) {
+                    this.toggleEditMode();
+                }
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    if (this.isActive) this.saveFile();
+                }
+            });
+        }
+
+        toggleEditMode() {
+            this.isActive = !this.isActive;
+
+            if (this.isActive) {
+                /* Make text elements editable */
+                const selectors = 'h1,h2,h3,p,.enunciado,.dica-text,.rg-title,.rg-desc,.q-title,.capa-title,.capa-sub,.capa-meta,.capa-tag';
+                this.editables = document.querySelectorAll(selectors);
+                this.editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+                this.toggle.classList.add('active');
+                this.toggle.textContent = '✓ SAIR';
+                this.indicator.style.display = 'block';
+            } else {
+                this.editables.forEach(el => el.removeAttribute('contenteditable'));
+                this.toggle.classList.remove('active');
+                this.toggle.textContent = '✏ EDITAR';
+                this.indicator.style.display = 'none';
+            }
+        }
+
+        saveFile() {
+            const html = '<!DOCTYPE html>' + document.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const a    = document.createElement('a');
+            a.href     = URL.createObjectURL(blob);
+            a.download = 'struct-em-c.html';
+            a.click();
+        }
+    }
+
+    /* ===================================================
+       BOOT
+       =================================================== */
+    const deck   = new SlidePresentation();
+    const editor = new InlineEditor();
+</script>
+
+</body>
+</html>
