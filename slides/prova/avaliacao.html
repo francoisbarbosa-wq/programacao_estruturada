@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliação de Programação Estruturada, Sistema de Funcionários</title>
+
+<!-- Fonts: Clash Display (display) + Supreme (body) from Fontshare, JetBrains Mono from Google -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=supreme@400,500,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* ===========================================
+   THEME — warm "blond terminal" on near-black
+   Edit these variables to restyle the whole deck
+   =========================================== */
+:root{
+    --bg-primary:#0d0b07;
+    --bg-secondary:#17130c;
+    --panel:#1c1710;
+    --panel-2:#241d13;
+    --cream:#f4ecd8;
+    --muted:#a99a7c;
+    --amber:#ffb627;
+    --amber-deep:#f0930a;
+    --amber-glow:rgba(255,182,39,.22);
+    --line:rgba(244,236,216,.12);
+
+    /* syntax colors for C code */
+    --c-keyword:#ff9d5c;
+    --c-type:#4ec9b0;
+    --c-comment:#7a8f5a;
+    --c-string:#e0a05a;
+    --c-num:#c3d68a;
+    --c-func:#e8d493;
+    --c-punc:#c9bda2;
+
+    --font-display:'Clash Display',sans-serif;
+    --font-body:'Supreme',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+
+    --stage-bg:#000;
+    --slide-bg:var(--bg-primary);
+
+    --ease:cubic-bezier(0.16,1,0.3,1);
+    --dur:.65s;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* --- viewport-base.css (mandatory fixed 16:9 stage) --- */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff);}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff);}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1;}
+img,video,canvas,svg{max-width:100%;max-height:100%;}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000;}
+@media print{
+    html,body{width:1920px;height:auto;overflow:visible;background:#fff;}
+    .deck-viewport{position:static;overflow:visible;background:#fff;}
+    .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none;}
+    .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always;}
+    .slide:last-child{break-after:auto;page-break-after:auto;}
+    .deck-controls{display:none!important;}
+}
+@media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important;}
+}
+
+/* ===========================================
+   GLOBAL SLIDE STYLING
+   =========================================== */
+.slide{
+    color:var(--cream);
+    font-family:var(--font-body);
+    background:
+        radial-gradient(1200px 700px at 82% -10%, rgba(255,182,39,.10), transparent 60%),
+        radial-gradient(900px 600px at -8% 108%, rgba(78,201,176,.06), transparent 55%),
+        var(--bg-primary);
+}
+/* faint blueprint grid so background has depth, not flat color */
+.slide::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:
+        linear-gradient(var(--line) 1px,transparent 1px),
+        linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    opacity:.25;
+    mask-image:radial-gradient(ellipse 90% 80% at 50% 40%,#000 55%,transparent 100%);
+    -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 40%,#000 55%,transparent 100%);
+}
+
+.slide-content{
+    position:absolute;inset:0;
+    padding:84px 96px 90px;
+    display:flex;flex-direction:column;
+    z-index:2;
+}
+
+/* header row: section tag + title */
+.s-head{display:flex;align-items:center;gap:26px;margin-bottom:34px;}
+.s-tag{
+    font-family:var(--font-mono);font-weight:700;font-size:20px;letter-spacing:.06em;
+    color:var(--bg-primary);background:var(--amber);
+    padding:9px 16px;border-radius:7px;white-space:nowrap;
+    box-shadow:0 0 0 1px var(--amber-deep), 0 8px 22px var(--amber-glow);
+}
+.s-title{
+    font-family:var(--font-display);font-weight:600;font-size:60px;line-height:1.02;
+    letter-spacing:-.01em;color:var(--cream);
+}
+.s-title .hl{color:var(--amber);}
+.s-rule{height:2px;flex:1;background:linear-gradient(90deg,var(--line),transparent);margin-left:6px;}
+
+.lead{font-size:30px;line-height:1.5;color:var(--muted);max-width:1500px;}
+.lead strong{color:var(--cream);font-weight:700;}
+
+/* ===========================================
+   CODE BLOCK — terminal chrome
+   =========================================== */
+.code{
+    background:linear-gradient(180deg,#14100a,#0f0c07);
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+}
+.code-bar{
+    display:flex;align-items:center;gap:10px;
+    padding:14px 20px;border-bottom:1px solid var(--line);
+    background:rgba(255,182,39,.04);
+}
+.dot{width:13px;height:13px;border-radius:50%;}
+.dot.r{background:#e0563f;}.dot.y{background:#e6a821;}.dot.g{background:#59a869;}
+.code-name{margin-left:12px;font-family:var(--font-mono);font-size:18px;color:var(--muted);}
+pre.src{
+    margin:0;padding:26px 30px;
+    font-family:var(--font-mono);font-size:23px;line-height:1.62;
+    color:var(--c-punc);white-space:pre;overflow:hidden;
+}
+pre.src.sm{font-size:20px;line-height:1.5;padding:22px 28px;}
+.kw{color:var(--c-keyword);}
+.ty{color:var(--c-type);}
+.cm{color:var(--c-comment);font-style:italic;}
+.st{color:var(--c-string);}
+.nm{color:var(--c-num);}
+.fn{color:var(--c-func);}
+.pp{color:#c586c0;} /* preprocessor */
+
+/* ===========================================
+   RULE / STEP CARDS
+   =========================================== */
+.grid{display:grid;gap:22px;}
+.card{
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;
+    padding:24px 26px;min-width:0;
+    position:relative;
+}
+.card .n{
+    font-family:var(--font-mono);font-weight:700;font-size:19px;color:var(--amber);
+    margin-bottom:10px;display:block;
+}
+.card h4{font-family:var(--font-display);font-weight:600;font-size:26px;color:var(--cream);margin-bottom:8px;line-height:1.15;}
+.card p{font-size:21px;line-height:1.42;color:var(--muted);}
+.card p code,.lead code,li code{
+    font-family:var(--font-mono);font-size:.9em;color:var(--amber);
+    background:rgba(255,182,39,.10);padding:2px 7px;border-radius:5px;
+}
+
+/* numbered step list */
+.steps{list-style:none;display:flex;flex-direction:column;gap:16px;}
+.steps li{
+    display:flex;gap:20px;align-items:flex-start;
+    font-size:24px;line-height:1.4;color:var(--cream);
+}
+.steps li .idx{
+    flex:none;width:44px;height:44px;border-radius:11px;
+    display:grid;place-items:center;
+    font-family:var(--font-mono);font-weight:700;font-size:20px;
+    color:var(--amber);background:rgba(255,182,39,.10);border:1px solid rgba(255,182,39,.28);
+}
+.steps li .tx{padding-top:6px;}
+.steps li .tx b{color:var(--amber);font-weight:700;}
+.steps li .tx span{color:var(--muted);}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start;min-height:0;}
+.two.wide-left{grid-template-columns:1.15fr .85fr;}
+
+.note{
+    display:flex;gap:16px;align-items:flex-start;
+    background:rgba(78,201,176,.07);border:1px solid rgba(78,201,176,.25);
+    border-radius:12px;padding:18px 22px;font-size:21px;line-height:1.45;color:#cfe9e2;
+}
+.note .ic{color:var(--c-type);font-family:var(--font-mono);font-weight:700;font-size:22px;flex:none;}
+.note.warn{background:rgba(224,86,63,.08);border-color:rgba(224,86,63,.32);color:#f2cdc4;}
+.note.warn .ic{color:#e0563f;}
+
+.pills{display:flex;flex-wrap:wrap;gap:14px;}
+.pill{
+    font-family:var(--font-mono);font-size:22px;color:var(--cream);
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 20px;display:flex;align-items:center;gap:12px;
+}
+.pill .k{color:var(--amber);font-weight:700;}
+.pill.exit{border-color:rgba(224,86,63,.4);}
+.pill.exit .k{color:#e0563f;}
+
+/* ===========================================
+   TITLE SLIDE
+   =========================================== */
+.title-slide{display:flex;align-items:center;justify-content:center;}
+.title-wrap{position:relative;z-index:2;padding:0 120px;max-width:1560px;}
+.eyebrow{
+    font-family:var(--font-mono);font-size:24px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--amber);margin-bottom:30px;display:flex;align-items:center;gap:18px;
+}
+.eyebrow::before{content:"";width:60px;height:2px;background:var(--amber);}
+.title-slide h1{
+    font-family:var(--font-display);font-weight:700;font-size:120px;line-height:.98;
+    letter-spacing:-.02em;color:var(--cream);margin-bottom:28px;
+}
+.title-slide h1 em{font-style:normal;color:var(--amber);}
+.title-sub{font-size:32px;color:var(--muted);line-height:1.4;margin-bottom:52px;max-width:1200px;}
+.title-meta{display:flex;gap:44px;flex-wrap:wrap;font-family:var(--font-mono);font-size:22px;color:var(--muted);}
+.title-meta b{color:var(--cream);font-weight:500;}
+.title-code{
+    position:absolute;right:-40px;top:50%;transform:translateY(-50%);
+    font-family:var(--font-mono);font-size:200px;font-weight:700;color:rgba(255,182,39,.07);
+    z-index:1;line-height:1;user-select:none;
+}
+
+/* section divider slide */
+.divider{display:flex;align-items:center;justify-content:center;text-align:center;}
+.divider .d-inner{position:relative;z-index:2;}
+.divider .d-num{font-family:var(--font-mono);font-size:34px;color:var(--amber);letter-spacing:.3em;margin-bottom:18px;}
+.divider h2{font-family:var(--font-display);font-weight:700;font-size:96px;color:var(--cream);letter-spacing:-.02em;}
+
+/* ===========================================
+   REVEAL ANIMATIONS
+   =========================================== */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);}
+.slide.visible .reveal{opacity:1;transform:translateY(0);}
+.slide.visible .reveal:nth-child(1){transition-delay:.06s;}
+.slide.visible .reveal:nth-child(2){transition-delay:.14s;}
+.slide.visible .reveal:nth-child(3){transition-delay:.22s;}
+.slide.visible .reveal:nth-child(4){transition-delay:.30s;}
+.slide.visible .reveal:nth-child(5){transition-delay:.38s;}
+.slide.visible .reveal:nth-child(6){transition-delay:.46s;}
+.slide.visible .reveal:nth-child(7){transition-delay:.54s;}
+.d1{transition-delay:.12s!important;}.d2{transition-delay:.24s!important;}
+.d3{transition-delay:.36s!important;}.d4{transition-delay:.48s!important;}
+.d5{transition-delay:.6s!important;}.d6{transition-delay:.72s!important;}
+
+/* ===========================================
+   PROGRESS + PAGE CHROME (outside stage)
+   =========================================== */
+.progress{position:fixed;left:0;bottom:0;height:4px;background:var(--amber);z-index:1000;transition:width .4s var(--ease);box-shadow:0 0 12px var(--amber-glow);}
+.pageno{position:fixed;right:26px;bottom:20px;z-index:1000;font-family:var(--font-mono);font-size:16px;color:var(--muted);letter-spacing:.08em;}
+.pageno b{color:var(--amber);}
+
+/* edit affordance */
+.edit-hotzone{position:fixed;top:0;left:0;width:80px;height:80px;z-index:10000;cursor:pointer;}
+.edit-toggle{position:fixed;top:16px;left:16px;z-index:10001;border:none;border-radius:10px;background:var(--panel-2);color:var(--cream);font-size:20px;padding:10px 12px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s ease;border:1px solid var(--line);}
+.edit-toggle.show,.edit-toggle.active{opacity:1;pointer-events:auto;}
+.edit-toggle.active{background:var(--amber);color:#000;}
+[contenteditable="true"]{outline:2px dashed var(--amber);outline-offset:4px;border-radius:4px;cursor:text;}
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+    <!-- ===== SLIDE 1 — TITLE ===== -->
+    <section class="slide title-slide active">
+        <div class="title-code">{ }</div>
+        <div class="title-wrap">
+            <div class="eyebrow reveal">Avaliação · Programação Estruturada</div>
+            <h1 class="reveal">Sistema de<br><em>Gerenciamento</em><br>de Funcionários</h1>
+            <p class="title-sub reveal">Um cadastro completo em linguagem C, <strong>sem ponteiros</strong>, com <em style="color:var(--cream);font-style:normal">array de structs</em>, <em style="color:var(--cream);font-style:normal">struct aninhada</em> e código modularizado em funções.</p>
+            <div class="title-meta reveal">
+                <span>Prof. <b>François Fernandes Ribeiro Barbosa</b></span>
+                <span>Linguagem: <b>C</b></span>
+                <span>IFMA · BCC</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 2 — CONTEXTUALIZAÇÃO ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 01</span>
+                <h2 class="s-title">Contextualização</h2>
+                <span class="s-rule"></span>
+            </div>
+            <p class="lead reveal" style="margin-bottom:40px;">Uma empresa deseja um sistema simples, em <strong>linguagem C</strong>, para gerenciar o cadastro de seus funcionários. Os dados ficam <strong>armazenados em memória</strong> durante toda a execução do programa.</p>
+            <div class="grid reveal" style="grid-template-columns:repeat(5,1fr);">
+                <div class="card"><span class="n">01</span><h4>Cadastrar</h4><p>Inserir um novo funcionário</p></div>
+                <div class="card"><span class="n">02</span><h4>Editar</h4><p>Atualizar dados existentes</p></div>
+                <div class="card"><span class="n">03</span><h4>Deletar</h4><p>Remover pelo código</p></div>
+                <div class="card"><span class="n">04</span><h4>Buscar</h4><p>Localizar pelo código</p></div>
+                <div class="card"><span class="n">05</span><h4>Listar</h4><p>Exibir todos os registros</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 3 — REGRAS GERAIS ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 02</span>
+                <h2 class="s-title">Regras <span class="hl">Gerais</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="grid reveal" style="grid-template-columns:1fr 1fr;">
+                <div class="card"><span class="n">RG-01</span><h4>Tudo em C</h4><p>O programa deve ser implementado integralmente em linguagem C.</p></div>
+                <div class="card"><span class="n">RG-02</span><h4>Proibido ponteiros</h4><p>Nenhum <code>*</code>, aritmética de ponteiros ou <code>malloc/calloc/free</code>.</p></div>
+                <div class="card"><span class="n">RG-03</span><h4>Array de structs</h4><p>Armazenamento em vetor com tamanho fixo: <code>#define MAX 10</code>.</p></div>
+                <div class="card"><span class="n">RG-04</span><h4>total como retorno</h4><p>Funções que mudam a quantidade retornam o novo <code>total</code> (int), reatribuído na <code>main</code>.</p></div>
+                <div class="card"><span class="n">RG-05</span><h4>Modularização</h4><p>Código organizado em funções, proibido concentrar a lógica na <code>main</code>.</p></div>
+                <div class="card"><span class="n">RG-06</span><h4>Struct aninhada + menu</h4><p>Ao menos uma <code>struct</code> dentro de <code>struct</code>, e menu interativo em <code>do-while</code>.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 4 — ESTRUTURAS DE DADOS ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 03</span>
+                <h2 class="s-title">Estruturas de Dados <span class="hl">obrigatórias</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="two wide-left" style="flex:1;">
+                <div class="code reveal">
+                    <div class="code-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-name">estruturas.c</span></div>
+<pre class="src"><span class="kw">struct</span> <span class="ty">Cargo</span> {
+    <span class="kw">char</span>  titulo[<span class="nm">30</span>];
+    <span class="kw">float</span> salarioBase;
+};
+
+<span class="kw">struct</span> <span class="ty">Funcionario</span> {
+    <span class="kw">int</span>  codigo;
+    <span class="kw">char</span> nome[<span class="nm">50</span>];
+    <span class="kw">struct</span> <span class="ty">Cargo</span> cargo;  <span class="cm">// aninhada</span>
+    <span class="kw">int</span>  anosEmpresa;
+};
+
+<span class="pp">#define</span> <span class="ty">MAX</span> <span class="nm">10</span></pre>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:22px;">
+                    <div class="note reveal d1"><span class="ic">i</span><div>Os campos acima são o <b style="color:#fff">mínimo exigido</b>. Não remova nenhum campo — você pode acrescentar outros, desde que a struct aninhada <code style="color:var(--c-type)">Cargo</code> seja preservada.</div></div>
+                    <div class="note warn reveal d2"><span class="ic">!</span><div>Altere os modelos e use <b style="color:#fff">typedef</b> em todo o algoritmo, criando os tipos <code style="color:#f2cdc4">Cargo</code> e <code style="color:#f2cdc4">Funcionario</code> sem repetir a palavra <code style="color:#f2cdc4">struct</code>.</div></div>
+                    <div class="card reveal d3"><span class="n">POR QUÊ?</span><p style="color:var(--cream);font-size:20px;">A struct aninhada obriga você a acessar dados em dois níveis: <code>func.cargo.salarioBase</code>.</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 5 — FUNCIONALIDADES DO MENU ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 04</span>
+                <h2 class="s-title">Funcionalidades <span class="hl">exigidas</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <p class="lead reveal" style="margin-bottom:40px;">O menu deve conter, no mínimo, as seguintes opções:</p>
+            <div class="pills reveal" style="font-size:26px;">
+                <div class="pill"><span class="k">1</span> Cadastrar funcionário</div>
+                <div class="pill"><span class="k">2</span> Editar funcionário</div>
+                <div class="pill"><span class="k">3</span> Deletar funcionário</div>
+                <div class="pill"><span class="k">4</span> Buscar funcionário</div>
+                <div class="pill"><span class="k">5</span> Listar todos os funcionários</div>
+                <div class="pill exit"><span class="k">0</span> Sair</div>
+            </div>
+            <div class="note reveal d3" style="margin-top:44px;max-width:1400px;"><span class="ic">i</span><div>O menu permanece ativo em um laço <code style="color:var(--c-type)">do-while</code> e só encerra quando o usuário escolhe a opção <b style="color:#fff">0 — Sair</b>.</div></div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 6 — ASSINATURAS OBRIGATÓRIAS ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 05</span>
+                <h2 class="s-title">Assinaturas de Funções <span class="hl">obrigatórias</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="code reveal" style="flex:1;">
+                <div class="code-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-name">prototipos.c</span></div>
+<pre class="src sm"><span class="cm">// Exibe o menu de opcoes na tela</span>
+<span class="kw">void</span> <span class="fn">exibirMenu</span>(<span class="kw">void</span>);
+
+<span class="cm">// Insere um novo funcionario ao final do array e retorna o novo total</span>
+<span class="kw">int</span>  <span class="fn">cadastrarFuncionario</span>(<span class="kw">struct</span> <span class="ty">Funcionario</span> empresa[], <span class="kw">int</span> total);
+
+<span class="cm">// Localiza pelo codigo e sobrescreve os dados (senao, "nao encontrado")</span>
+<span class="kw">void</span> <span class="fn">editarFuncionario</span>(<span class="kw">struct</span> <span class="ty">Funcionario</span> empresa[], <span class="kw">int</span> total, <span class="kw">int</span> codigo);
+
+<span class="cm">// Remove pelo codigo (deslocando elementos) e retorna o novo total</span>
+<span class="kw">int</span>  <span class="fn">deletarFuncionario</span>(<span class="kw">struct</span> <span class="ty">Funcionario</span> empresa[], <span class="kw">int</span> total, <span class="kw">int</span> codigo);
+
+<span class="cm">// Retorna o INDICE do funcionario no array, ou -1 se nao existir</span>
+<span class="kw">int</span>  <span class="fn">buscarFuncionario</span>(<span class="kw">struct</span> <span class="ty">Funcionario</span> empresa[], <span class="kw">int</span> total, <span class="kw">int</span> codigo);
+
+<span class="cm">// Lista todos, exibindo os dados do struct Cargo aninhado</span>
+<span class="kw">void</span> <span class="fn">listarFuncionarios</span>(<span class="kw">struct</span> <span class="ty">Funcionario</span> empresa[], <span class="kw">int</span> total);</pre>
+            </div>
+            <div class="note warn reveal d4" style="margin-top:26px;"><span class="ic">!</span><div><code style="color:#f2cdc4">editarFuncionario</code> <b style="color:#fff">não</b> retorna <code style="color:#f2cdc4">total</code>: ela não altera a quantidade de elementos, apenas sobrescreve dados já existentes.</div></div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 7 — ESTRUTURA DO MENU ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 06</span>
+                <h2 class="s-title">Estrutura do <span class="hl">menu</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="two" style="flex:1;align-items:center;">
+                <div class="code reveal">
+                    <div class="code-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-name">saida no terminal</span></div>
+<pre class="src"><span class="cm">==========================================</span>
+   SISTEMA DE GERENCIAMENTO
+        DE FUNCIONARIOS
+<span class="cm">==========================================</span>
+<span class="kw">1</span> - Cadastrar funcionario
+<span class="kw">2</span> - Editar funcionario
+<span class="kw">3</span> - Deletar funcionario
+<span class="kw">4</span> - Buscar funcionario
+<span class="kw">5</span> - Listar todos os funcionarios
+<span class="st">0</span> - Sair
+<span class="cm">==========================================</span>
+Escolha uma opcao:</pre>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:22px;">
+                    <div class="card reveal d1"><span class="n">FORMATO</span><h4>Layout fiel</h4><p style="font-size:20px;">A saída na tela deve seguir exatamente este formato — bordas, numeração e a linha final de escolha.</p></div>
+                    <div class="note reveal d2"><span class="ic">i</span><div>Essa saída é produzida pela função <code style="color:var(--c-type)">exibirMenu()</code>, chamada no início de cada iteração do <code style="color:var(--c-type)">do-while</code>.</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 8 — ESQUELETO DA MAIN ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 07</span>
+                <h2 class="s-title">Esqueleto da <span class="hl">main</span> <span style="font-size:34px;color:var(--muted);font-family:var(--font-mono);">(obrigatório)</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="code reveal" style="flex:1;">
+                <div class="code-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-name">main.c</span></div>
+<pre class="src sm"><span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    <span class="kw">struct</span> <span class="ty">Funcionario</span> empresa[<span class="ty">MAX</span>];
+    <span class="kw">int</span> total = <span class="nm">0</span>, opcao, codigo;
+    <span class="kw">do</span> {
+        <span class="fn">exibirMenu</span>();
+        <span class="fn">scanf</span>(<span class="st">"%d"</span>, &opcao);
+        <span class="kw">switch</span> (opcao) {
+            <span class="kw">case</span> <span class="nm">1</span>: total = <span class="fn">cadastrarFuncionario</span>(empresa, total); <span class="kw">break</span>;
+            <span class="kw">case</span> <span class="nm">2</span>: <span class="fn">editarFuncionario</span>(empresa, total, codigo); <span class="kw">break</span>;
+            <span class="kw">case</span> <span class="nm">3</span>: total = <span class="fn">deletarFuncionario</span>(empresa, total, codigo); <span class="kw">break</span>;
+            <span class="kw">case</span> <span class="nm">4</span>: {
+                <span class="kw">int</span> idx = <span class="fn">buscarFuncionario</span>(empresa, total, codigo);
+                <span class="kw">if</span> (idx != -<span class="nm">1</span>) <span class="fn">printf</span>(<span class="st">"Encontrado: %s\n"</span>, empresa[idx].nome);
+                <span class="kw">else</span> <span class="fn">printf</span>(<span class="st">"Funcionario nao encontrado.\n"</span>);
+                <span class="kw">break</span>;
+            }
+            <span class="kw">case</span> <span class="nm">5</span>: <span class="fn">listarFuncionarios</span>(empresa, total); <span class="kw">break</span>;
+            <span class="kw">case</span> <span class="nm">0</span>: <span class="fn">printf</span>(<span class="st">"Encerrando...\n"</span>); <span class="kw">break</span>;
+            <span class="kw">default</span>: <span class="fn">printf</span>(<span class="st">"Opcao invalida!\n"</span>);
+        }
+    } <span class="kw">while</span> (opcao != <span class="nm">0</span>);
+    <span class="kw">return</span> <span class="nm">0</span>;
+}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 9 — DIVIDER: DETALHAMENTO ===== -->
+    <section class="slide divider">
+        <div class="d-inner">
+            <div class="d-num reveal">SEÇÕES 08 – 10</div>
+            <h2 class="reveal">Detalhamento das<br>funcionalidades</h2>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 10 — CADASTRAR ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 08</span>
+                <h2 class="s-title">Cadastrar <span class="hl">funcionário</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <p class="lead reveal" style="margin-bottom:36px;">Adiciona um novo funcionário na posição <code>empresa[total]</code> (logo após o último cadastrado) e devolve o novo <strong>total</strong> para a <code>main</code> reatribuir.</p>
+            <ol class="steps reveal d1">
+                <li><span class="idx">1</span><span class="tx"><b>Verificar espaço.</b> <span>Checar <code style="color:var(--amber)">total &lt; MAX</code>. Se cheio, exibir erro e retornar o total inalterado, nunca escrever fora dos limites.</span></span></li>
+                <li><span class="idx">2</span><span class="tx"><b>Validar código duplicado.</b> <span>Chamar <code style="color:var(--amber)">buscarFuncionario</code> antes de inserir. Se retornar índice ≠ -1, o código já existe → recusar e retornar o total sem alteração.</span></span></li>
+                <li><span class="idx">3</span><span class="tx"><b>Inserir e incrementar.</b> <span>Passou nas validações? Gravar em <code style="color:var(--amber)">empresa[total]</code> e retornar <code style="color:var(--amber)">total + 1</code>.</span></span></li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 11 — BUSCAR ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 09</span>
+                <h2 class="s-title">Buscar <span class="hl">funcionário</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="two wide-left" style="flex:1;align-items:center;">
+                <ol class="steps reveal d1">
+                    <li><span class="idx">1</span><span class="tx"><b>Percorrer o array.</b> <span>Um <code style="color:var(--amber)">for</code> de 0 até <code style="color:var(--amber)">total - 1</code> (nunca até MAX, só posições preenchidas são válidas).</span></span></li>
+                    <li><span class="idx">2</span><span class="tx"><b>Comparar o código.</b> <span>Verificar <code style="color:var(--amber)">empresa[i].codigo == codigo</code>.</span></span></li>
+                    <li><span class="idx">3</span><span class="tx"><b>Retornar ao encontrar.</b> <span>Devolver imediatamente o índice <code style="color:var(--amber)">i</code> (busca sequencial com saída antecipada).</span></span></li>
+                    <li><span class="idx">4</span><span class="tx"><b>Sentinela -1.</b> <span>Se o laço terminar sem correspondência, retornar <code style="color:var(--amber)">-1</code> = "não encontrado".</span></span></li>
+                </ol>
+                <div style="display:flex;flex-direction:column;gap:22px;">
+                    <div class="card reveal d2"><span class="n">FUNÇÃO-BASE</span><h4>Reutilizada por todas</h4><p style="font-size:20px;">Editar, deletar e as opções 4/6 dependem dela. Qualquer erro aqui se propaga, implemente com cuidado.</p></div>
+                    <div class="note reveal d3"><span class="ic">i</span><div>Retornar o <b style="color:#fff">índice</b> (int) em vez do struct é o que elimina o ponteiro: o índice é uma "referência segura" para ler <code style="color:var(--c-type)">empresa[idx].nome</code> ou modificar o elemento no array original.</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 12 — EDITAR ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">SEÇÃO 10</span>
+                <h2 class="s-title">Editar <span class="hl">funcionário</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <p class="lead reveal" style="margin-bottom:32px;">Localiza um funcionário pelo <code>codigo</code> e atualiza seus dados, inclusive os campos do <strong>Cargo</strong> aninhado, sobrescrevendo a posição no array. Não retorna <code>total</code>: a quantidade não muda.</p>
+            <ol class="steps reveal d1" style="gap:13px;">
+                <li><span class="idx">1</span><span class="tx"><b>Localizar.</b> <span>Reaproveitar <code style="color:var(--amber)">buscarFuncionario</code> para obter o índice (evita duplicar lógica).</span></span></li>
+                <li><span class="idx">2</span><span class="tx"><b>Tratar não encontrado.</b> <span>Se retornar -1, avisar que o código não existe e encerrar sem pedir dados.</span></span></li>
+                <li><span class="idx">3</span><span class="tx"><b>Exibir dados atuais.</b> <span>Boa prática: mostrar o registro antes de sobrescrever, para confirmar a pessoa certa.</span></span></li>
+                <li><span class="idx">4</span><span class="tx"><b>Coletar novos dados.</b> <span>Gravar em <code style="color:var(--amber)">empresa[idx]</code>, incluindo <code style="color:var(--amber)">cargo.titulo</code> e <code style="color:var(--amber)">cargo.salarioBase</code>. O <code style="color:var(--amber)">codigo</code> é a chave, não deve ser editável.</span></span></li>
+                <li><span class="idx">5</span><span class="tx"><b>Confirmar.</b> <span>Exibir mensagem de sucesso ao final.</span></span></li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- ===== SLIDE 13 — CHECKLIST / FECHAMENTO ===== -->
+    <section class="slide">
+        <div class="slide-content">
+            <div class="s-head reveal">
+                <span class="s-tag">ENTREGA</span>
+                <h2 class="s-title">Checklist antes de <span class="hl">entregar</span></h2>
+                <span class="s-rule"></span>
+            </div>
+            <div class="grid reveal d1" style="grid-template-columns:1fr 1fr;margin-bottom:auto;">
+                <div class="card"><span class="n">✓ 01</span><h4>Sem ponteiros</h4><p>Nenhum <code>*</code>, <code>malloc</code> ou aritmética de ponteiros no código.</p></div>
+                <div class="card"><span class="n">✓ 02</span><h4>typedef aplicado</h4><p>Tipos <code>Cargo</code> e <code>Funcionario</code> criados e usados em todo o algoritmo.</p></div>
+                <div class="card"><span class="n">✓ 03</span><h4>total reatribuído</h4><p>Cadastro e remoção retornam o novo total, atualizado na <code>main</code>.</p></div>
+                <div class="card"><span class="n">✓ 04</span><h4>Modularizado</h4><p>Assinaturas exatas implementadas; lógica fora da <code>main</code>.</p></div>
+                <div class="card"><span class="n">✓ 05</span><h4>Struct aninhada</h4><p><code>Cargo</code> dentro de <code>Funcionario</code>, exibida ao listar.</p></div>
+                <div class="card"><span class="n">✓ 06</span><h4>Menu em do-while</h4><p>Loop ativo até a opção <code>0</code>, com formato de saída fiel.</p></div>
+            </div>
+            <div class="note reveal d3" style="margin-top:36px;"><span class="ic">i</span><div>Compile testando os limites: array cheio (<code style="color:var(--c-type)">MAX</code>), código duplicado, código inexistente e remoção do meio do vetor.</div></div>
+        </div>
+    </section>
+
+</main>
+</div>
+
+<!-- chrome outside stage -->
+<div class="progress" id="progress"></div>
+<div class="pageno"><b id="pcur">01</b> / <span id="ptot">13</span></div>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Modo edição (E)">✏️</button>
+
+<script>
+/* ===========================================
+   SLIDE CONTROLLER — scale, nav, progress
+   =========================================== */
+class SlidePresentation{
+    constructor(){
+        this.slides=[...document.querySelectorAll('.slide')];
+        this.cur=0;
+        this.stage=document.getElementById('deckStage');
+        this.progress=document.getElementById('progress');
+        this.pcur=document.getElementById('pcur');
+        document.getElementById('ptot').textContent=String(this.slides.length).padStart(2,'0');
+        this.scale();addEventListener('resize',()=>this.scale());
+        this.keys();this.touch();this.wheel();
+        this.show(0);
+    }
+    scale(){
+        const f=Math.min(innerWidth/1920,innerHeight/1080);
+        const x=(innerWidth-1920*f)/2, y=(innerHeight-1080*f)/2;
+        this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+    }
+    show(i){
+        this.cur=Math.max(0,Math.min(i,this.slides.length-1));
+        this.slides.forEach((s,n)=>{s.classList.toggle('active',n===this.cur);s.classList.toggle('visible',n===this.cur);});
+        this.progress.style.width=((this.cur+1)/this.slides.length*100)+'%';
+        this.pcur.textContent=String(this.cur+1).padStart(2,'0');
+    }
+    next(){this.show(this.cur+1);}
+    prev(){this.show(this.cur-1);}
+    keys(){
+        addEventListener('keydown',e=>{
+            if(e.target.getAttribute&&e.target.getAttribute('contenteditable')==='true')return;
+            if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();this.next();}
+            else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();this.prev();}
+            else if(e.key==='Home'){this.show(0);}else if(e.key==='End'){this.show(this.slides.length-1);}
+        });
+    }
+    touch(){
+        let x0=null;
+        addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+        addEventListener('touchend',e=>{
+            if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;
+            if(Math.abs(dx)>50){dx<0?this.next():this.prev();}x0=null;
+        },{passive:true});
+    }
+    wheel(){
+        let lock=false;
+        addEventListener('wheel',e=>{
+            if(lock)return;
+            if(Math.abs(e.deltaY)<24)return;
+            lock=true;e.deltaY>0?this.next():this.prev();
+            setTimeout(()=>lock=false,600);
+        },{passive:true});
+    }
+}
+const deck=new SlidePresentation();
+
+/* ===========================================
+   INLINE EDITING (hover top-left or press E)
+   =========================================== */
+const editor={
+    isActive:false,
+    toggleEditMode(){
+        this.isActive=!this.isActive;
+        const btn=document.getElementById('editToggle');
+        btn.classList.toggle('active',this.isActive);
+        document.querySelectorAll('.slide h1,.slide h2,.slide h4,.slide p,.slide .tx,.slide .card .n,.slide .code-name,.slide .pill')
+            .forEach(el=>el.setAttribute('contenteditable',this.isActive));
+    }
+};
+const et=document.getElementById('editToggle');
+const hz=document.querySelector('.edit-hotzone');
+let ht=null;
+et.addEventListener('click',()=>editor.toggleEditMode());
+hz.addEventListener('click',()=>editor.toggleEditMode());
+hz.addEventListener('mouseenter',()=>{clearTimeout(ht);et.classList.add('show');});
+hz.addEventListener('mouseleave',()=>{ht=setTimeout(()=>{if(!editor.isActive)et.classList.remove('show');},400);});
+et.addEventListener('mouseenter',()=>clearTimeout(ht));
+et.addEventListener('mouseleave',()=>{ht=setTimeout(()=>{if(!editor.isActive)et.classList.remove('show');},400);});
+addEventListener('keydown',e=>{
+    if((e.key==='e'||e.key==='E')&&!(e.target.getAttribute&&e.target.getAttribute('contenteditable')==='true'))editor.toggleEditMode();
+});
+</script>
+</body>
+</html>
