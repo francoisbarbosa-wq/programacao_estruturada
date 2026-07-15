@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio de Férias · A Forja dos Aventureiros · Programação Estruturada em C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --stage-bg:#0d0a07; --slide-bg:#17110b;
+  --ink:#efe4cd; --ink-soft:#cdbc9a; --ink-mute:#9a8968;
+  --gold:#e8bf52; --ember:#dd7f34; --green:#86c88f;
+  --line:rgba(232,191,82,.18); --panel:rgba(255,246,226,.035); --panel-2:rgba(255,246,226,.06);
+  --bronze:#cd8a4f; --prata:#c6cdd8; --ouro:#ecc63f;
+  --font-disp:'Cinzel',serif; --font-body:'Spectral',serif; --font-mono:'JetBrains Mono',monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body { width:100%; height:100%; margin:0; overflow:hidden; background:var(--stage-bg,#000); }
+.deck-viewport { position:fixed; inset:0; overflow:hidden; background:var(--stage-bg,#000); }
+.deck-stage { position:absolute; left:0; top:0; width:1920px; height:1080px; overflow:hidden; transform-origin:0 0; background:var(--slide-bg,#fff); }
+.slide { position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; display:block; visibility:hidden; opacity:0; pointer-events:none; background:var(--slide-bg,#fff); }
+.slide.active, .slide.visible { visibility:visible; opacity:1; pointer-events:auto; z-index:1; }
+img, video, canvas, svg { max-width:100%; max-height:100%; }
+@media print {
+  html, body { width:1920px; height:auto; overflow:visible; background:#fff; }
+  .deck-viewport { position:static; overflow:visible; background:#fff; }
+  .deck-stage { position:static; width:auto; height:auto; transform:none !important; background:none; }
+  .slide { position:relative; display:block !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important; width:1920px; height:1080px; break-after:page; page-break-after:always; }
+  .slide:last-child { break-after:auto; page-break-after:auto; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.2s !important; } }
+
+.deck-stage { color:var(--ink); font-family:var(--font-body);
+  background:
+    radial-gradient(1200px 800px at 78% -10%, rgba(221,127,52,.10), transparent 60%),
+    radial-gradient(1000px 700px at 10% 110%, rgba(232,191,82,.08), transparent 60%),
+    var(--slide-bg); }
+.deck-stage::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background-image:repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px); mix-blend-mode:overlay; }
+code { font-family:var(--font-mono); color:var(--green); font-size:.9em; font-weight:500; letter-spacing:-.2px; }
+b { color:var(--gold); font-weight:600; }
+
+.reveal { opacity:0; transform:translateY(24px); transition:opacity .55s var(--ease), transform .55s var(--ease); }
+.slide.visible .reveal { opacity:1; transform:translateY(0); }
+.slide.visible .reveal:nth-child(1){transition-delay:.06s} .slide.visible .reveal:nth-child(2){transition-delay:.15s}
+.slide.visible .reveal:nth-child(3){transition-delay:.24s} .slide.visible .reveal:nth-child(4){transition-delay:.32s}
+
+/* ---------- TÍTULO ---------- */
+.title-slide { padding:120px 130px; display:flex; flex-direction:column; justify-content:center; }
+.title-kicker { font-family:var(--font-mono); color:var(--ember); letter-spacing:6px; font-size:24px; text-transform:uppercase; margin-bottom:34px; }
+.title-slide h1 { font-family:var(--font-disp); font-weight:800; font-size:132px; line-height:.98; color:var(--ink); }
+.title-slide h1 .amp { color:var(--gold); display:block; font-size:150px; }
+.title-sub { margin-top:38px; font-size:38px; color:var(--ink-soft); font-weight:300; max-width:1200px; }
+.title-meta { margin-top:60px; display:flex; gap:40px; }
+.title-meta .chip { font-family:var(--font-mono); font-size:22px; color:var(--ink); border:1px solid var(--line); padding:14px 24px; border-radius:4px; background:var(--panel); }
+.title-meta .chip b { color:var(--gold); }
+.title-rule { width:120px; height:4px; background:linear-gradient(90deg,var(--gold),var(--ember)); margin-top:34px; border-radius:2px; }
+
+/* ---------- SLIDES DE CONCEITO ---------- */
+.slide-std { padding:88px 120px; display:flex; flex-direction:column; }
+.eyebrow { font-family:var(--font-mono); color:var(--ember); letter-spacing:4px; font-size:22px; text-transform:uppercase; margin-bottom:18px; }
+.slide-std h2 { font-family:var(--font-disp); font-weight:700; font-size:74px; line-height:1.02; color:var(--ink); margin-bottom:14px; }
+.slide-std .lede { font-size:30px; color:var(--ink-soft); font-weight:300; max-width:1400px; margin-bottom:44px; }
+.cards-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:34px; flex:1; }
+.mcard { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:44px 40px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.mcard::before { content:""; position:absolute; left:0; top:0; width:100%; height:5px; background:var(--accent,var(--gold)); }
+.mcard .mnum { font-family:var(--font-mono); font-size:20px; color:var(--ink-mute); margin-bottom:20px; }
+.mcard h3 { font-family:var(--font-disp); font-weight:600; font-size:38px; color:var(--gold); margin-bottom:20px; }
+.mcard p { font-size:26px; color:var(--ink-soft); line-height:1.5; }
+.mcard.c1 { --accent:var(--ember); } .mcard.c2 { --accent:var(--gold); } .mcard.c3 { --accent:var(--green); }
+.tempos { display:grid; grid-template-columns:repeat(4,1fr); gap:28px; flex:1; }
+.tempo { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:38px 32px; display:flex; flex-direction:column; position:relative; }
+.tempo .tnum { font-family:var(--font-disp); font-weight:700; font-size:52px; color:var(--accent,var(--gold)); margin-bottom:22px; }
+.tempo h3 { font-family:var(--font-disp); font-size:32px; font-weight:600; color:var(--ink); margin-bottom:8px; }
+.tempo .tsub { font-family:var(--font-mono); font-size:18px; color:var(--ink-mute); margin-bottom:20px; }
+.tempo p { font-size:23px; color:var(--ink-soft); line-height:1.45; }
+.tempo.t1{--accent:var(--ember)} .tempo.t2{--accent:var(--gold)} .tempo.t3{--accent:var(--prata)} .tempo.t4{--accent:var(--green)}
+.tempo-arrow { position:absolute; right:-22px; top:50%; transform:translateY(-50%); color:var(--ink-mute); font-size:34px; }
+.degraus { display:flex; gap:34px; flex:1; }
+.degrau { flex:1; border-radius:10px; padding:46px 40px; display:flex; flex-direction:column; border:1px solid var(--line); }
+.degrau .medal { font-family:var(--font-disp); font-weight:800; font-size:30px; letter-spacing:2px; text-transform:uppercase; margin-bottom:22px; }
+.degrau h3 { font-family:var(--font-disp); font-size:34px; font-weight:600; color:var(--ink); margin-bottom:16px; }
+.degrau p { font-size:25px; color:var(--ink-soft); line-height:1.5; }
+.degrau.d-bronze { background:linear-gradient(180deg, rgba(205,138,79,.14), transparent 70%); border-color:rgba(205,138,79,.4); margin-top:64px; }
+.degrau.d-prata { background:linear-gradient(180deg, rgba(198,205,216,.14), transparent 70%); border-color:rgba(198,205,216,.4); margin-top:32px; }
+.degrau.d-ouro { background:linear-gradient(180deg, rgba(236,198,63,.16), transparent 70%); border-color:rgba(236,198,63,.5); }
+.d-bronze .medal{color:var(--bronze)} .d-prata .medal{color:var(--prata)} .d-ouro .medal{color:var(--ouro)}
+
+/* mapa */
+.slide-mapa { padding-top:66px; padding-bottom:56px; }
+.slide-mapa h2 { font-size:64px; margin-bottom:8px; }
+.slide-mapa .lede { margin-bottom:22px; }
+.mapa-wrap { flex:1; overflow:hidden; }
+table.mapa { width:100%; border-collapse:collapse; font-size:22px; }
+table.mapa td { padding:6px 14px; border-bottom:1px solid rgba(232,191,82,.10); vertical-align:middle; }
+.m-dia { width:78px; }
+.m-num { display:inline-flex; align-items:center; justify-content:center; width:50px; height:36px; border-radius:6px; font-family:var(--font-mono); font-weight:600; font-size:21px; color:#100c07; background:var(--bcolor); }
+.m-data { width:120px; font-family:var(--font-mono); font-size:20px; color:var(--ink-mute); }
+.m-cont { width:360px; color:var(--ink); font-weight:500; }
+.m-evol { color:var(--ink-soft); }
+table.mapa tr.row-final td { background:rgba(236,198,63,.08); border-bottom:none; }
+table.mapa tr.row-final .m-evol { color:var(--gold); font-weight:500; }
+.mapa-legend { display:flex; gap:26px; margin-top:18px; flex-wrap:wrap; }
+.mapa-legend .lg { display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:19px; color:var(--ink-soft); }
+.mapa-legend .sw { width:16px; height:16px; border-radius:4px; }
+
+/* ---------- CABEÇALHO DO DIA ---------- */
+.slide-dia { padding:56px 84px 52px; display:flex; flex-direction:column; }
+.dia-head { display:flex; gap:34px; align-items:stretch; margin-bottom:30px; }
+.dia-badge { flex:0 0 auto; width:216px; border-radius:12px; border:1px solid var(--bcolor);
+  background:linear-gradient(160deg, color-mix(in srgb, var(--bcolor) 20%, transparent), transparent 80%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 14px; }
+.dia-num { font-family:var(--font-disp); font-weight:800; font-size:48px; color:var(--ink); line-height:1; }
+.dia-data { font-family:var(--font-mono); font-size:22px; color:var(--bcolor); margin-top:11px; }
+.dia-titles { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.dia-meta { display:flex; align-items:center; gap:16px; margin-bottom:12px; flex-wrap:wrap; }
+.bloco-tag { font-family:var(--font-mono); font-size:18px; text-transform:uppercase; letter-spacing:2px; color:var(--bcolor); border-left:3px solid var(--bcolor); padding-left:12px; }
+.cap { font-family:var(--font-disp); font-size:23px; color:var(--ink-mute); font-style:italic; }
+.flag { font-family:var(--font-mono); font-size:17px; padding:5px 13px; border-radius:20px; }
+.flag-check { color:var(--gold); background:rgba(232,191,82,.12); border:1px solid rgba(232,191,82,.35); }
+.flag-final { color:#100c07; background:linear-gradient(90deg,var(--gold),var(--ember)); font-weight:600; }
+.parte { font-family:var(--font-mono); font-size:17px; color:var(--ink-mute); margin-left:auto; letter-spacing:1px; }
+.dia-topico { font-family:var(--font-disp); font-weight:700; font-size:42px; line-height:1.06; color:var(--ink); }
+.dia-topico code { font-size:.82em; }
+
+/* ---------- TELA 1: MODELO (código) ---------- */
+.modelo-body { display:grid; grid-template-columns:57% 43%; gap:32px; flex:1; min-height:0; }
+.code-col { display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#120d08; }
+.code-topbar { display:flex; align-items:center; gap:14px; padding:14px 22px; background:rgba(255,246,226,.04); border-bottom:1px solid var(--line); }
+.code-topbar .dots { display:flex; gap:8px; }
+.code-topbar .dots i { width:13px; height:13px; border-radius:50%; background:#3a2f20; display:block; }
+.code-topbar .dots i:nth-child(1){background:#d9762f} .code-topbar .dots i:nth-child(2){background:#e8bf52} .code-topbar .dots i:nth-child(3){background:#86c88f}
+.code-title { font-family:var(--font-mono); font-size:18px; color:var(--ink-mute); }
+.code-lang { margin-left:auto; font-family:var(--font-mono); font-size:18px; color:var(--gold); }
+pre.code { flex:1; margin:0; padding:26px 30px; overflow:hidden; }
+pre.code code { font-family:var(--font-mono); font-size:24px; line-height:1.5; color:var(--ink); white-space:pre; display:block; }
+.c-pp { color:#dd8a4a; }
+.c-cmt { color:#7f7358; font-style:italic; }
+.c-kw { color:#e0975c; font-weight:500; }
+.c-ty { color:#e8bf52; }
+.c-str { color:#86c88f; }
+.c-num { color:#cbb06a; }
+.c-fn { color:#9fc0dd; }
+
+.side-col { display:flex; flex-direction:column; gap:26px; }
+.block { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:28px 30px; }
+.block-key { flex:1; }
+.block-label { font-family:var(--font-mono); font-size:20px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:16px; display:flex; align-items:center; gap:12px; }
+.block-label em { font-style:normal; text-transform:none; letter-spacing:0; color:var(--ink-mute); font-family:var(--font-body); font-size:19px; }
+.block-label .dot { width:12px; height:12px; border-radius:50%; }
+.block-aq .block-label { color:var(--ember); } .block-aq .dot { background:var(--ember); }
+.block-key .block-label { color:var(--green); } .block-key .dot { background:var(--green); }
+.block p { font-size:26px; line-height:1.5; color:var(--ink-soft); }
+ul.pontos { list-style:none; display:flex; flex-direction:column; gap:16px; }
+ul.pontos li { position:relative; padding-left:30px; font-size:25px; line-height:1.45; color:var(--ink-soft); }
+ul.pontos li::before { content:"▸"; position:absolute; left:0; color:var(--green); font-size:22px; }
+
+/* ---------- TELA 2: DESAFIO (requisitos) ---------- */
+.desafio-body { flex:1; display:flex; flex-direction:column; min-height:0; }
+.desafio-label { font-family:var(--font-mono); font-size:22px; text-transform:uppercase; letter-spacing:1.5px; color:var(--ink); margin-bottom:20px; }
+.desafio-label em { font-style:normal; text-transform:none; letter-spacing:0; color:var(--ink-mute); font-family:var(--font-body); font-size:21px; }
+.tiers { display:flex; flex-direction:column; gap:20px; flex:1; }
+.tier { border-radius:12px; padding:24px 32px; border:1px solid var(--line); display:flex; flex-direction:column; gap:14px; flex:1; justify-content:center; }
+.tier-top { display:flex; align-items:baseline; gap:24px; }
+.tier-name { font-family:var(--font-disp); font-weight:700; font-size:28px; letter-spacing:1px; text-transform:uppercase; flex:0 0 130px; }
+.tier-obj { font-size:27px; color:var(--ink); line-height:1.35; }
+.io-row { display:flex; gap:44px; padding-left:154px; }
+.io { display:flex; align-items:baseline; gap:12px; font-size:23px; color:var(--ink-soft); }
+.io-k { font-family:var(--font-mono); font-size:16px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-mute); }
+.io-ex { display:flex; align-items:center; gap:14px; padding-left:154px; }
+.io-ex .arr { color:var(--ink-mute); font-size:22px; }
+code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color:var(--green); font-size:20px; }
+.tier-bronze { background:linear-gradient(100deg, rgba(205,138,79,.15), transparent 62%); border-color:rgba(205,138,79,.4); }
+.tier-prata { background:linear-gradient(100deg, rgba(198,205,216,.13), transparent 62%); border-color:rgba(198,205,216,.36); }
+.tier-ouro { background:linear-gradient(100deg, rgba(236,198,63,.17), transparent 62%); border-color:rgba(236,198,63,.5); }
+.tier-bronze .tier-name{color:var(--bronze)} .tier-prata .tier-name{color:var(--prata)} .tier-ouro .tier-name{color:var(--ouro)}
+
+/* gancho */
+.gancho { margin-top:24px; display:flex; align-items:center; gap:22px; padding:22px 32px; border-radius:10px;
+  background:linear-gradient(90deg, rgba(134,200,143,.12), rgba(134,200,143,.02)); border:1px solid rgba(134,200,143,.30); }
+.gancho-icon { font-size:36px; color:var(--green); }
+.gancho-label { font-family:var(--font-mono); font-size:19px; text-transform:uppercase; letter-spacing:2px; color:var(--green); border-right:1px solid rgba(134,200,143,.35); padding-right:22px; }
+.gancho-text { font-size:26px; color:var(--ink); font-style:italic; }
+
+/* ---------- FECHAMENTO ---------- */
+.close-slide { padding:100px 130px; display:flex; flex-direction:column; justify-content:center; }
+.close-slide h2 { font-family:var(--font-disp); font-weight:700; font-size:82px; line-height:1.04; color:var(--ink); margin-bottom:34px; }
+.close-slide h2 span { color:var(--gold); }
+.close-steps { display:flex; align-items:center; gap:20px; margin:20px 0 44px; flex-wrap:wrap; }
+.cstep { font-family:var(--font-mono); font-size:26px; padding:20px 26px; border-radius:8px; background:var(--panel); border:1px solid var(--line); color:var(--ink); }
+.cstep b { color:var(--green); }
+.carrow { color:var(--ink-mute); font-size:30px; }
+.close-note { font-size:32px; color:var(--ink-soft); font-weight:300; max-width:1400px; line-height:1.5; }
+.close-note b { color:var(--gold); font-weight:500; }
+
+/* ---------- CHROME ---------- */
+.progress-bar { position:fixed; left:0; top:0; height:4px; background:linear-gradient(90deg,var(--gold),var(--ember)); z-index:1000; transition:width .4s var(--ease); }
+.counter { position:fixed; right:26px; bottom:20px; font-family:var(--font-mono); font-size:18px; color:var(--ink-mute); z-index:1000; }
+.counter b { color:var(--gold); }
+.hint { position:fixed; left:26px; bottom:20px; font-family:var(--font-mono); font-size:15px; color:rgba(154,137,104,.6); z-index:1000; }
+.edit-hotzone { position:fixed; top:0; left:0; width:80px; height:80px; z-index:10000; cursor:pointer; }
+.edit-toggle { position:fixed; top:18px; left:18px; width:52px; height:52px; border-radius:50%; border:1px solid var(--line); background:#1c150d; color:var(--gold); font-size:22px; cursor:pointer; opacity:0; pointer-events:none; transition:opacity .3s ease; z-index:10001; }
+.edit-toggle.show, .edit-toggle.active { opacity:1; pointer-events:auto; }
+.edit-toggle.active { background:var(--gold); color:#100c07; }
+[contenteditable="true"] { outline:2px dashed rgba(232,191,82,.5); outline-offset:4px; border-radius:3px; }
+
+/* ---------- LIBERAÇÃO PROGRESSIVA (tela de cadeado) ---------- */
+.lock-cover { position:absolute; inset:0; z-index:60; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:100px; gap:14px;
+  background:radial-gradient(1100px 760px at 50% 42%, rgba(18,24,38,.965), rgba(9,11,18,.99)); }
+.lock-cover .lk-ico { font-size:132px; line-height:1; filter:drop-shadow(0 6px 30px rgba(244,122,31,.35)); }
+.lock-cover .lk-sub { font-family:var(--font-mono); font-size:22px; letter-spacing:6px; text-transform:uppercase; color:var(--ink-mute); }
+.lock-cover .lk-dia { font-family:var(--font-disp); font-weight:800; font-size:88px; color:var(--gold); line-height:1; margin:6px 0; }
+.lock-cover .lk-msg { font-family:var(--font-body); font-size:34px; color:var(--ink-soft); }
+.lock-cover .lk-date { font-family:var(--font-mono); font-size:44px; color:var(--ember); font-weight:600; margin-top:2px; }
+.lock-cover .lk-rule { width:120px; height:4px; background:linear-gradient(90deg,var(--ember),var(--gold)); border-radius:2px; margin:20px 0 6px; }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Modo edição (E)">✏️</button>
+
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+
+    <section class="slide title-slide active" data-unlock-day="0">
+      <div class="title-kicker reveal">Desafio de Férias · 15 dias</div>
+      <h1 class="reveal">A Forja dos<br><span class="amp">Aventureiros</span></h1>
+      <div class="title-rule reveal"></div>
+      <p class="title-sub reveal">Programação Estruturada em C: da estrutura de decisão até structs, em uma jornada única que cresce a cada dia.</p>
+      <div class="title-meta reveal">
+        <span class="chip"><b>15</b> dias · sem domingos</span>
+        <span class="chip">Código-modelo + <b>3 níveis</b> por dia</span>
+        <span class="chip">1 sistema que <b>evolui</b></span>
+      </div>
+    </section>
+
+    <section class="slide slide-std" data-unlock-day="0">
+      <div class="eyebrow reveal">A Metodologia</div>
+      <h2 class="reveal">Três cadências que trabalham juntas</h2>
+      <p class="lede reveal">Os 15 dias não são 15 exercícios soltos: são uma coisa só que <b>evolui</b>. A progressão vem de três camadas simultâneas.</p>
+      <div class="cards-3">
+        <div class="mcard c1 reveal"><div class="mnum">01 · ritmo</div><h3>Ritmo diário fixo</h3><p>Todo dia segue os mesmos quatro tempos. O aluno internaliza o ritmo e sabe o que esperar.</p></div>
+        <div class="mcard c2 reveal"><div class="mnum">02 · níveis</div><h3>Bronze · Prata · Ouro</h3><p>Cada desafio tem três degraus. Quem tem dificuldade e quem é avançado têm para onde ir.</p></div>
+        <div class="mcard c3 reveal"><div class="mnum">03 · fio condutor</div><h3>Um sistema que cresce</h3><p>Um único sistema, a Forja, evolui do Dia 1 ao 15, sempre usando o conteúdo do dia.</p></div>
+      </div>
+    </section>
+
+    <section class="slide slide-std" data-unlock-day="0">
+      <div class="eyebrow reveal">Cadência 01 · O ritmo diário</div>
+      <h2 class="reveal">Quatro tempos, todos os dias</h2>
+      <p class="lede reveal">O esqueleto que se repete e emenda um dia no outro. Cada dia tem duas telas: o <b>modelo</b> e o <b>desafio</b>.</p>
+      <div class="tempos">
+        <div class="tempo t1 reveal"><div class="tnum">1</div><h3>Aquecimento</h3><div class="tsub">retomada</div><p>Micro-exercício que resolve algo do dia anterior. Revisa sem parecer revisão.</p><span class="tempo-arrow">→</span></div>
+        <div class="tempo t2 reveal"><div class="tnum">2</div><h3>Modelo guiado</h3><div class="tsub">“eu faço”</div><p>Código real e comentado. O aluno lê antes de escrever o seu.</p><span class="tempo-arrow">→</span></div>
+        <div class="tempo t3 reveal"><div class="tnum">3</div><h3>Desafio em níveis</h3><div class="tsub">“você faz”</div><p>Bronze / Prata / Ouro, cada um com entrada, saída e exemplo.</p><span class="tempo-arrow">→</span></div>
+        <div class="tempo t4 reveal"><div class="tnum">4</div><h3>Gancho</h3><div class="tsub">para amanhã</div><p>Uma pergunta que só fica elegante com o conteúdo do dia seguinte.</p></div>
+      </div>
+    </section>
+
+    <section class="slide slide-std" data-unlock-day="0">
+      <div class="eyebrow reveal">Cadência 02 · Os três degraus</div>
+      <h2 class="reveal">Bronze, Prata e Ouro</h2>
+      <p class="lede reveal">Cada desafio sobe em três degraus: ninguém fica parado, ninguém fica sem teto.</p>
+      <div class="degraus">
+        <div class="degrau d-bronze reveal"><div class="medal">Bronze</div><h3>Todo mundo fecha</h3><p>Reproduz o conceito no caso mais simples. É o piso que a turma inteira alcança.</p></div>
+        <div class="degrau d-prata reveal"><div class="medal">Prata</div><h3>Uma variação a mais</h3><p>Aplica o conceito em um caso com uma condição ou reviravolta adicional.</p></div>
+        <div class="degrau d-ouro reveal"><div class="medal">Ouro</div><h3>Estica o limite</h3><p>Junta com um conteúdo anterior, pede robustez (validação, casos de borda) ou otimização.</p></div>
+      </div>
+    </section>
+
+    <section class="slide slide-std slide-mapa" data-unlock-day="0">
+      <div class="eyebrow reveal">Cadência 03 · O fio condutor</div>
+      <h2 class="reveal">O mapa da jornada</h2>
+      <p class="lede reveal">Um único sistema, a Forja, cresce a cada dia, usando exatamente o conteúdo daquele dia.</p>
+      <div class="mapa-wrap reveal">
+        <table class="mapa"><tbody><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0803c">01</span></td>
+        <td class="m-data">16 Qui</td><td class="m-cont"><code>if / else</code></td><td class="m-evol">Decidir se <b>um</b> aventureiro entra na forja</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0803c">02</span></td>
+        <td class="m-data">17 Sex</td><td class="m-cont"><code>else if</code> / aninhado</td><td class="m-evol">Classificá-lo por faixa (XP × classe)</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0803c">03</span></td>
+        <td class="m-data">18 Sáb</td><td class="m-cont"><code>switch</code></td><td class="m-evol">Menu de ações da forja</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0b23c">04</span></td>
+        <td class="m-data">20 Seg</td><td class="m-cont"><code>while</code></td><td class="m-evol">Recrutar até digitar 0 (sentinela)</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0b23c">05</span></td>
+        <td class="m-data">21 Ter</td><td class="m-cont"><code>do-while</code></td><td class="m-evol">O menu passa a repetir até “sair”</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0b23c">06</span></td>
+        <td class="m-data">22 Qua</td><td class="m-cont"><code>for</code></td><td class="m-evol">Processar N heróis / N rodadas</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#e0b23c">07</span></td>
+        <td class="m-data">23 Qui</td><td class="m-cont">laços aninhados</td><td class="m-evol">Torneio: todos contra todos</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#7bbf8a">08</span></td>
+        <td class="m-data">24 Sex</td><td class="m-cont">vetores (intro)</td><td class="m-evol">Guardar o XP de vários heróis</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#7bbf8a">09</span></td>
+        <td class="m-data">25 Sáb</td><td class="m-cont">algoritmos c/ vetor</td><td class="m-evol">Campeão, média, busca, ranking</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#7bbf8a">10</span></td>
+        <td class="m-data">27 Seg</td><td class="m-cont">matrizes</td><td class="m-evol">Mapa do calabouço / atributos</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#7bbf8a">11</span></td>
+        <td class="m-data">28 Ter</td><td class="m-cont">strings</td><td class="m-evol">Nomes dos heróis (buscar, formatar)</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#7ba6d6">12</span></td>
+        <td class="m-data">29 Qua</td><td class="m-cont">funções</td><td class="m-evol">Refatorar validações em funções</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#7ba6d6">13</span></td>
+        <td class="m-data">30 Qui</td><td class="m-cont">funções + vetores</td><td class="m-evol">Funções que retornam e transformam vetores</td></tr><tr><td class="m-dia"><span class="m-num" style="--bcolor:#c093d6">14</span></td>
+        <td class="m-data">31 Sex</td><td class="m-cont">structs</td><td class="m-evol">Modelar a <b>ficha</b> do aventureiro</td></tr><tr class="row-final"><td class="m-dia"><span class="m-num" style="--bcolor:#c093d6">15</span></td>
+        <td class="m-data">01 Sáb</td><td class="m-cont">vetor de structs</td><td class="m-evol">A <b>forja inteira</b>: integrador final</td></tr></tbody></table>
+        <div class="mapa-legend">
+          <span class="lg"><span class="sw" style="background:#e0803c"></span>Decisão</span>
+          <span class="lg"><span class="sw" style="background:#e0b23c"></span>Repetição</span>
+          <span class="lg"><span class="sw" style="background:#7bbf8a"></span>Estruturas de dados</span>
+          <span class="lg"><span class="sw" style="background:#7ba6d6"></span>Modularização</span>
+          <span class="lg"><span class="sw" style="background:#c093d6"></span>Structs</span>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="slide slide-dia" data-unlock-day="1">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0803c">
+          <span class="dia-num">DIA 01</span>
+          <span class="dia-data">16 · Qui</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0803c">Decisão</span>
+            <span class="cap">Cap. 1 · O Portão da Forja</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Estruturas de decisão simples: <code>if</code> / <code>if-else</code></h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> nivel, minimo = <span class="c-num">5</span>;              <span class="c-cmt">// nivel minimo para entrar</span>
+
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Nivel do aventureiro: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;nivel);
+
+    <span class="c-kw">if</span> (nivel &gt;= minimo)                <span class="c-cmt">// condicao de entrada</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Bem-vindo a Forja!\n&quot;</span>);
+    <span class="c-kw">else</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Nivel insuficiente.\n&quot;</span>);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Ler a idade de um candidato e dizer se é maior de idade.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>A ordem do teste importa: <code>&gt;=</code> já inclui o valor-limite.</li><li>O <code>else</code> cobre todos os casos restantes: nada escapa.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="1">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0803c">
+          <span class="dia-num">DIA 01</span>
+          <span class="dia-data">16 · Qui</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0803c">Decisão</span>
+            <span class="cap">Cap. 1 · O Portão da Forja</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Estruturas de decisão simples: <code>if</code> / <code>if-else</code></h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Ler o nível e o mínimo e dizer se o aventureiro entra.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>dois inteiros: nível e mínimo</span></div>
+          <div class="io"><span class="io-k">Saída</span><span><code>ENTRA</code> ou <code>NAO ENTRA</code></span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">7 5</code><span class="arr">→</span><code class="ex">ENTRA</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Ler também o HP; só entra se nível ≥ mínimo <b>e</b> HP &gt; 0.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>nível, mínimo, HP</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>mensagem correspondente</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Se o nível for negativo, recusar como entrada inválida antes de avaliar.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>nível, mínimo, HP</span></div>
+          <div class="io"><span class="io-k">Saída</span><span><code>ENTRADA INVALIDA</code> ou o resultado da regra</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">E se, em vez de só “entra / não entra”, existissem <b>três faixas</b> de admissão?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="2">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0803c">
+          <span class="dia-num">DIA 02</span>
+          <span class="dia-data">17 · Sex</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0803c">Decisão</span>
+            <span class="cap">Cap. 2 · As Ordens da Forja</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Decisão composta e encadeada: <code>if-else if</code>, aninhados</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> xp;
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;XP do aventureiro: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;xp);
+
+    <span class="c-kw">if</span> (xp &lt; <span class="c-num">100</span>)                       <span class="c-cmt">// do menor para o maior</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Ordem: Bronze\n&quot;</span>);
+    <span class="c-kw">else</span> <span class="c-kw">if</span> (xp &lt; <span class="c-num">300</span>)
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Ordem: Prata\n&quot;</span>);
+    <span class="c-kw">else</span> <span class="c-kw">if</span> (xp &lt; <span class="c-num">600</span>)
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Ordem: Ouro\n&quot;</span>);
+    <span class="c-kw">else</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Ordem: Lenda\n&quot;</span>);       <span class="c-cmt">// rede de seguranca</span>
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Reaproveitar o “é apto?” de ontem, agora somando a checagem de HP.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>Encadeie do menor para o maior: o primeiro que casar vence.</li><li>O <code>else</code> final é a faixa mais alta (rede de segurança).</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="2">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0803c">
+          <span class="dia-num">DIA 02</span>
+          <span class="dia-data">17 · Sex</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0803c">Decisão</span>
+            <span class="cap">Cap. 2 · As Ordens da Forja</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Decisão composta e encadeada: <code>if-else if</code>, aninhados</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Classificar o XP em Bronze(&lt;100)/Prata(&lt;300)/Ouro(&lt;600)/Lenda.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>um inteiro (XP)</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>o nome da ordem</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">250</code><span class="arr">→</span><code class="ex">Prata</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Ler também a classe (1=guerreiro, 2=mago) e imprimir “Ordem - Classe”.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>XP e classe</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ordem e classe</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Tratar XP negativo como inválido e definir a regra dos limites exatos (100/300/600).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>um inteiro (XP)</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ordem ou <code>INVALIDO</code></span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Muitos <code>if</code> encadeados cansam. Existe uma forma de <b>menu</b> mais limpa?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="3">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0803c">
+          <span class="dia-num">DIA 03</span>
+          <span class="dia-data">18 · Sáb</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0803c">Decisão</span>
+            <span class="cap">Cap. 3 · O Balcão de Missões</span>
+            <span class="flag flag-check">◆ Fecha bloco</span>
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Seleção múltipla: <code>switch-case</code></h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> opcao;
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;1-Recrutar  2-Consultar  3-Sair\n&quot;</span>);
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Escolha: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;opcao);
+
+    <span class="c-kw">switch</span> (opcao) {
+        <span class="c-kw">case</span> <span class="c-num">1</span>: <span class="c-fn">printf</span>(<span class="c-str">&quot;Recrutando...\n&quot;</span>);  <span class="c-kw">break</span>;
+        <span class="c-kw">case</span> <span class="c-num">2</span>: <span class="c-fn">printf</span>(<span class="c-str">&quot;Consultando...\n&quot;</span>); <span class="c-kw">break</span>;
+        <span class="c-kw">case</span> <span class="c-num">3</span>: <span class="c-fn">printf</span>(<span class="c-str">&quot;Ate logo!\n&quot;</span>);      <span class="c-kw">break</span>;
+        <span class="c-kw">default</span>: <span class="c-fn">printf</span>(<span class="c-str">&quot;Opcao invalida.\n&quot;</span>);
+    }
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Converter um <code>if-else if</code> de ontem em <code>switch</code> equivalente.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>Cada <code>case</code> precisa do <code>break</code>: sem ele, “vaza” para o próximo.</li><li>O <code>default</code> trata qualquer opção inesperada.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="3">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0803c">
+          <span class="dia-num">DIA 03</span>
+          <span class="dia-data">18 · Sáb</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0803c">Decisão</span>
+            <span class="cap">Cap. 3 · O Balcão de Missões</span>
+            <span class="flag flag-check">◆ Fecha bloco</span>
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Seleção múltipla: <code>switch-case</code></h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Montar o menu 1-Recrutar / 2-Consultar / 3-Sair e imprimir a ação escolhida.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>um inteiro (opção)</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>o texto da ação</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">1</code><span class="arr">→</span><code class="ex">Recrutando...</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Opção inválida cai no <code>default</code>; adicionar 4-Missões abrindo um submenu (A/B).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>opção (e sub-opção)</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ação ou aviso de inválida</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Cada tipo de missão (A/B/C) paga uma recompensa diferente via <code>switch</code>.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>tipo da missão</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>valor da recompensa</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">O menu roda <b>uma vez só</b>. E se precisasse repetir até o usuário sair?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="4">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 04</span>
+          <span class="dia-data">20 · Seg</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 4 · Recrutamento Sem Fim</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Repetição com <code>while</code></h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> xp, total = <span class="c-num">0</span>;
+
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;XP (0 encerra): &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;xp);
+    <span class="c-kw">while</span> (xp != <span class="c-num">0</span>) {                   <span class="c-cmt">// 0 e a sentinela</span>
+        total += xp;
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;XP (0 encerra): &quot;</span>);
+        <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;xp);
+    }
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;XP total: %d\n&quot;</span>, total);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Contar de 1 até N com <code>while</code>, imprimindo cada valor.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>A <b>sentinela</b> (0) é o valor que encerra o laço.</li><li>Leia uma vez antes e de novo dentro do laço (padrão “ler-processar”).</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="4">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 04</span>
+          <span class="dia-data">20 · Seg</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 4 · Recrutamento Sem Fim</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Repetição com <code>while</code></h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Somar o XP lido repetidamente até o usuário digitar 0.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>inteiros terminados em 0</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>a soma total</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">50 30 20 0</code><span class="arr">→</span><code class="ex">100</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Contar quantos foram aptos (XP ≥ 100) e quantos recusados.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>inteiros terminados em 0</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>dois contadores</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Só encerrar quando a senha correta (1234) for digitada; contar as tentativas.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>senhas até acertar</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>nº de tentativas</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">E quando o bloco precisar rodar <b>ao menos uma vez</b> antes de testar a condição?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="5">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 05</span>
+          <span class="dia-data">21 · Ter</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 5 · O Balcão que Não Fecha</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Repetição com <code>do-while</code></h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> opcao;
+    <span class="c-kw">do</span> {                               <span class="c-cmt">// executa ao menos 1 vez</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;\n1-Recrutar 2-Consultar 3-Sair\n&quot;</span>);
+        <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;opcao);
+
+        <span class="c-kw">if</span> (opcao == <span class="c-num">1</span>) <span class="c-fn">printf</span>(<span class="c-str">&quot;Recrutando...\n&quot;</span>);
+        <span class="c-kw">else</span> <span class="c-kw">if</span> (opcao == <span class="c-num">2</span>) <span class="c-fn">printf</span>(<span class="c-str">&quot;Consultando...\n&quot;</span>);
+    } <span class="c-kw">while</span> (opcao != <span class="c-num">3</span>);              <span class="c-cmt">// condicao no fim</span>
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Forja fechada.\n&quot;</span>);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Pedir um número de 1 a 3, repetindo até a entrada ser válida.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li><code>do-while</code> executa o corpo <b>ao menos uma vez</b>.</li><li>A condição é testada no fim: ideal para menus.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="5">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 05</span>
+          <span class="dia-data">21 · Ter</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 5 · O Balcão que Não Fecha</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Repetição com <code>do-while</code></h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Menu que repete até o usuário escolher 3-Sair (<code>do-while</code>).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>opções até 3</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ações + <code>Forja fechada</code></span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">1 2 3</code><span class="arr">→</span><code class="ex">Recrutando... Consultando... Forja fechada</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Validar a opção dentro do laço: rejeitar fora de 1 a 3 e pedir de novo.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>opções (válidas e inválidas)</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ações ou aviso</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Acumular estatísticas da sessão (nº de recrutas e de consultas) e exibir no fim.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>opções até sair</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>resumo da sessão</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">E se soubéssemos <b>de antemão</b> quantos aventureiros processar?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="6">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 06</span>
+          <span class="dia-data">22 · Qua</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 6 · A Expedição de N Heróis</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Repetição com <code>for</code></h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> n, dano, total = <span class="c-num">0</span>;
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Quantas rodadas? &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;n);
+
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">1</span>; i &lt;= n; i++) {     <span class="c-cmt">// repete N vezes</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Dano da rodada %d: &quot;</span>, i);
+        <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;dano);
+        total += dano;
+    }
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Dano total: %d\n&quot;</span>, total);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Imprimir uma contagem / tabuada usando <code>for</code>.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>O <code>for</code> reúne início, condição e passo em uma linha.</li><li>Use quando você <b>já sabe</b> quantas vezes repetir.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="6">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 06</span>
+          <span class="dia-data">22 · Qua</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 6 · A Expedição de N Heróis</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Repetição com <code>for</code></h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Ler N e depois N valores de dano, somando o total.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>o dano total</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">3 / 10 20 30</code><span class="arr">→</span><code class="ex">60</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Além do total, descobrir e imprimir o maior dano das rodadas.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>total e maior</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Imprimir os turnos em ordem regressiva (de N até 1): iniciativa decrescente.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>contagem de N a 1</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">E se <b>cada herói</b> tivesse que enfrentar <b>todos os outros</b>?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="7">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 07</span>
+          <span class="dia-data">23 · Qui</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 7 · O Torneio da Forja</span>
+            <span class="flag flag-check">◆ Fecha bloco</span>
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Laços aninhados: loops dentro de loops</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> n;
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Numero de herois: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;n);
+
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">1</span>; i &lt;= n; i++)       <span class="c-cmt">// cada heroi...</span>
+        <span class="c-kw">for</span> (<span class="c-ty">int</span> j = <span class="c-num">1</span>; j &lt;= n; j++)   <span class="c-cmt">// ...contra cada outro</span>
+            <span class="c-kw">if</span> (i != j)                <span class="c-cmt">// nao luta consigo</span>
+                <span class="c-fn">printf</span>(<span class="c-str">&quot;Heroi %d vs Heroi %d\n&quot;</span>, i, j);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Imprimir uma grade <code>i × j</code> simples com dois <code>for</code>.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>O laço interno recomeça a cada volta do externo.</li><li><code>i != j</code> impede o herói de lutar consigo mesmo.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="7">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#e0b23c">
+          <span class="dia-num">DIA 07</span>
+          <span class="dia-data">23 · Qui</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#e0b23c">Repetição</span>
+            <span class="cap">Cap. 7 · O Torneio da Forja</span>
+            <span class="flag flag-check">◆ Fecha bloco</span>
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Laços aninhados: loops dentro de loops</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Ler N e imprimir todos os confrontos “Herói i vs Herói j” (i ≠ j).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>lista de pares</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">3</code><span class="arr">→</span><code class="ex">1vs2, 1vs3, 2vs1, 2vs3, 3vs1, 3vs2</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Evitar confrontos repetidos (A×B e B×A) usando <code>j &gt; i</code>.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>pares sem repetição</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Desenhar uma pirâmide de <code>*</code> de altura N com laços aninhados.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>padrão triangular</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Guardar o XP de <b>todos</b> os heróis… uma variável para cada? Há algo melhor.</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="8">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 08</span>
+          <span class="dia-data">24 · Sex</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 8 · O Grimório de Registros</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Vetores: introdução (leitura, escrita, percurso)</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+<span class="c-pp">#define MAX 100</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> xp[MAX], n;
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Quantos aventureiros? &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;n);
+
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; n; i++) {      <span class="c-cmt">// preenche o vetor</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;XP #%d: &quot;</span>, i + <span class="c-num">1</span>);
+        <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;xp[i]);
+    }
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; n; i++)        <span class="c-cmt">// percorre e imprime</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Aventureiro %d: %d XP\n&quot;</span>, i + <span class="c-num">1</span>, xp[i]);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Declarar e preencher um vetor de 5 posições e imprimi-lo.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li><code>#define MAX</code> fixa a capacidade do vetor.</li><li>Um <code>for</code> preenche; outro percorre.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="8">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 08</span>
+          <span class="dia-data">24 · Sex</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 8 · O Grimório de Registros</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Vetores: introdução (leitura, escrita, percurso)</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Ler N e o XP de cada aventureiro num vetor; depois reimprimir a lista.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>lista indexada</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">3 / 120 80 300</code><span class="arr">→</span><code class="ex">1:120  2:80  3:300</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Calcular a média e marcar com <code>*</code> quem está acima dela.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>lista com destaque</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Recusar N &gt; MAX com aviso e validar cada XP (não pode ser negativo).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>lista ou mensagem de erro</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Com todos os XP guardados… como achar o <b>campeão</b> e a <b>média</b>?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="9">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 09</span>
+          <span class="dia-data">25 · Sáb</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 9 · Os Feitos da Forja</span>
+            <span class="flag flag-check">◆ Fecha bloco</span>
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Algoritmos com vetores: soma, média, extremos, busca</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> xp[] = {<span class="c-num">120</span>, <span class="c-num">340</span>, <span class="c-num">90</span>, <span class="c-num">500</span>, <span class="c-num">210</span>};
+    <span class="c-ty">int</span> n = <span class="c-num">5</span>, soma = <span class="c-num">0</span>;
+    <span class="c-ty">int</span> maior = xp[<span class="c-num">0</span>], menor = xp[<span class="c-num">0</span>];
+
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; n; i++) {      <span class="c-cmt">// um unico percurso</span>
+        soma += xp[i];
+        <span class="c-kw">if</span> (xp[i] &gt; maior) maior = xp[i];
+        <span class="c-kw">if</span> (xp[i] &lt; menor) menor = xp[i];
+    }
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Media: %.1f\n&quot;</span>, (<span class="c-ty">float</span>) soma / n);
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Maior: %d  Menor: %d\n&quot;</span>, maior, menor);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Somar todos os elementos de um vetor.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>Um único percurso já resolve soma, maior e menor.</li><li>Inicialize maior/menor com o <b>primeiro</b> elemento, não com 0.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="9">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 09</span>
+          <span class="dia-data">25 · Sáb</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 9 · Os Feitos da Forja</span>
+            <span class="flag flag-check">◆ Fecha bloco</span>
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Algoritmos com vetores: soma, média, extremos, busca</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Dado um vetor, calcular soma, média, maior e menor.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>os quatro resultados</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">5 / 120 340 90 500 210</code><span class="arr">→</span><code class="ex">soma 1260, média 252, maior 500, menor 90</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Ler um valor e informar sua posição no vetor (busca linear) ou “não encontrado”.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>vetor + valor buscado</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>índice ou aviso</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Ordenar o vetor em ordem crescente e imprimir o ranking.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>vetor ordenado</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">E se cada herói tivesse <b>vários atributos</b>, em linhas e colunas?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="10">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 10</span>
+          <span class="dia-data">27 · Seg</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 10 · O Mapa do Calabouço</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Matrizes: vetores bidimensionais</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> mapa[<span class="c-num">3</span>][<span class="c-num">3</span>] = {
+        {<span class="c-num">0</span>, <span class="c-num">1</span>, <span class="c-num">0</span>},
+        {<span class="c-num">0</span>, <span class="c-num">0</span>, <span class="c-num">0</span>},
+        {<span class="c-num">1</span>, <span class="c-num">0</span>, <span class="c-num">1</span>}
+    };
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; <span class="c-num">3</span>; i++) {      <span class="c-cmt">// linhas</span>
+        <span class="c-kw">for</span> (<span class="c-ty">int</span> j = <span class="c-num">0</span>; j &lt; <span class="c-num">3</span>; j++)    <span class="c-cmt">// colunas</span>
+            <span class="c-fn">printf</span>(<span class="c-str">&quot;%c &quot;</span>, mapa[i][j] ? <span class="c-str">&#x27;#&#x27;</span> : <span class="c-str">&#x27;.&#x27;</span>);
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;\n&quot;</span>);
+    }
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Preencher e imprimir uma matriz 3 × 3.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>Dois índices <code>[i][j]</code> = linha e coluna.</li><li>O operador ternário escolhe o caractere a imprimir.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="10">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 10</span>
+          <span class="dia-data">27 · Seg</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 10 · O Mapa do Calabouço</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Matrizes: vetores bidimensionais</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Ler as dimensões M×N e o mapa; depois imprimi-lo formatado.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>M, N e M·N inteiros</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>a grade</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">2 2 / 0 1 1 0</code><span class="arr">→</span><code class="ex">. #\n# .</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Tabela heróis × atributos; imprimir a soma de cada linha (total do herói).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>matriz de atributos</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>total por linha</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Somar a diagonal principal (matriz quadrada) ou contar as paredes da borda.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>matriz quadrada</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>a soma / contagem</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Ainda faltam os <b>nomes</b> dos heróis, e nomes são <b>texto</b>…</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="11">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 11</span>
+          <span class="dia-data">28 · Ter</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 11 · Os Nomes dos Heróis</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Strings: cadeias de caracteres, <code>&lt;string.h&gt;</code></h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+<span class="c-pp">#include &lt;string.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">char</span> nome[<span class="c-num">50</span>], busca[<span class="c-num">50</span>];
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Nome do heroi: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%49s&quot;</span>, nome);
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Procurar por: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%49s&quot;</span>, busca);
+
+    <span class="c-kw">if</span> (<span class="c-fn">strcmp</span>(nome, busca) == <span class="c-num">0</span>)      <span class="c-cmt">// 0 = iguais</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Heroi encontrado!\n&quot;</span>);
+    <span class="c-kw">else</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Tamanho: %zu\n&quot;</span>, <span class="c-fn">strlen</span>(nome));
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Ler e imprimir um nome (atenção a espaços na leitura).</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li><code>strcmp</code> devolve 0 quando as strings são iguais.</li><li><code>%49s</code> lê uma palavra sem estourar o vetor de 50.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="11">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7bbf8a">
+          <span class="dia-num">DIA 11</span>
+          <span class="dia-data">28 · Ter</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7bbf8a">Estruturas de dados</span>
+            <span class="cap">Cap. 11 · Os Nomes dos Heróis</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Strings: cadeias de caracteres, <code>&lt;string.h&gt;</code></h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Ler um nome e imprimir seu comprimento com <code>strlen</code>.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>uma palavra</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>um inteiro</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">Aria</code><span class="arr">→</span><code class="ex">4</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Ler N nomes num vetor e buscar um; dizer se está na forja (<code>strcmp</code>).</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N nomes + busca</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>encontrado / não</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Imprimir o nome em maiúsculas e com título “Sir/Lady” conforme uma flag.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>nome + sexo</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>nome formatado</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Seu <code>main()</code> está gigante. Como organizar em <b>blocos reutilizáveis</b>?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="12">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7ba6d6">
+          <span class="dia-num">DIA 12</span>
+          <span class="dia-data">29 · Qua</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7ba6d6">Modularização</span>
+            <span class="cap">Cap. 12 · Os Encantamentos Reutilizáveis</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Funções: definição, parâmetros, retorno</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">ehApto</span>(<span class="c-ty">int</span> nivel, <span class="c-ty">int</span> minimo) {   <span class="c-cmt">// retorna 1 ou 0</span>
+    <span class="c-kw">return</span> nivel &gt;= minimo;
+}
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> nivel;
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Nivel: &quot;</span>);
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;nivel);
+
+    <span class="c-kw">if</span> (<span class="c-fn">ehApto</span>(nivel, <span class="c-num">5</span>))             <span class="c-cmt">// a funcao vira condicao</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Apto a entrar.\n&quot;</span>);
+    <span class="c-kw">else</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;Ainda nao.\n&quot;</span>);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Escrever uma função que soma dois inteiros e retorna o resultado.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>A função isola a regra e pode ser reusada em vários pontos.</li><li>Um retorno <code>1/0</code> encaixa direto num <code>if</code>.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="12">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7ba6d6">
+          <span class="dia-num">DIA 12</span>
+          <span class="dia-data">29 · Qua</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7ba6d6">Modularização</span>
+            <span class="cap">Cap. 12 · Os Encantamentos Reutilizáveis</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Funções: definição, parâmetros, retorno</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Criar <code>int ehApto(int nivel, int minimo)</code> e usá-la no <code>main</code>.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>nível e mínimo</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>apto / não apto</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">7 5</code><span class="arr">→</span><code class="ex">Apto a entrar.</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Criar <code>float media(int v[], int n)</code> que recebe o vetor e devolve a média.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>vetor de XP</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>a média</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Modularizar o menu do Dia 3 em funções: uma por ação; o <code>main</code> só chama.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>opção do menu</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ação executada</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Como uma função consegue <b>alterar</b> o herói (subir de nível) de verdade?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="13">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7ba6d6">
+          <span class="dia-num">DIA 13</span>
+          <span class="dia-data">30 · Qui</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7ba6d6">Modularização</span>
+            <span class="cap">Cap. 13 · A Magia da Transformação</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Funções + modularização: retorno de valores e funções sobre vetores</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">int</span> <span class="c-fn">subirNivel</span>(<span class="c-ty">int</span> nivel) {   <span class="c-cmt">// recebe o valor, devolve o novo</span>
+    <span class="c-kw">return</span> nivel + <span class="c-num">1</span>;
+}
+
+<span class="c-ty">int</span> <span class="c-fn">somaXP</span>(<span class="c-ty">int</span> xp[], <span class="c-ty">int</span> n) {   <span class="c-cmt">// percorre o vetor inteiro</span>
+    <span class="c-ty">int</span> total = <span class="c-num">0</span>;
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; n; i++)
+        total += xp[i];
+    <span class="c-kw">return</span> total;
+}
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">int</span> nivel = <span class="c-num">4</span>;
+    nivel = <span class="c-fn">subirNivel</span>(nivel);        <span class="c-cmt">// guarda o retorno</span>
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;Nivel: %d\n&quot;</span>, nivel);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Uma função recebe <b>cópias</b> dos parâmetros. Como devolver o resultado ao <code>main</code>?</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>Mexer no parâmetro <b>não</b> altera o original: use <code>return</code> e guarde o valor.</li><li>Vetor é a exceção: a função enxerga o <b>vetor real</b> e pode alterá-lo.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="13">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#7ba6d6">
+          <span class="dia-num">DIA 13</span>
+          <span class="dia-data">30 · Qui</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#7ba6d6">Modularização</span>
+            <span class="cap">Cap. 13 · A Magia da Transformação</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Funções + modularização: retorno de valores e funções sobre vetores</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Criar <code>int subirNivel(int nivel)</code> que devolve o nível somado de 1 e guardar o retorno no <code>main</code>.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>nível atual</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>nível + 1</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">4</code><span class="arr">→</span><code class="ex">5</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Duas funções que recebem um vetor e devolvem, com <code>return</code>, o maior e o menor elemento.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>vetor</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>maior e menor</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj"><code>void buffForja(int xp[], int n)</code> que soma 50 a todos os elementos.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>vetor de XP</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>vetor turbinado</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Nome, nível, XP, classe… soltos. E se tudo isso fosse <b>um só</b> herói?</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="14">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#c093d6">
+          <span class="dia-num">DIA 14</span>
+          <span class="dia-data">31 · Sex</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#c093d6">Structs</span>
+            <span class="cap">Cap. 14 · A Ficha do Aventureiro</span>
+            
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Structs: registros</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+
+<span class="c-ty">struct</span> Aventureiro {                   <span class="c-cmt">// agrupa varios campos</span>
+    <span class="c-ty">char</span> nome[<span class="c-num">50</span>];
+    <span class="c-ty">char</span> classe[<span class="c-num">20</span>];
+    <span class="c-ty">int</span>  nivel;
+    <span class="c-ty">int</span>  xp;
+};
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">struct</span> Aventureiro a = {<span class="c-str">&quot;Aria&quot;</span>, <span class="c-str">&quot;Bardo&quot;</span>, <span class="c-num">13</span>, <span class="c-num">820</span>};
+    <span class="c-fn">printf</span>(<span class="c-str">&quot;%s, %s Nv.%d (%d XP)\n&quot;</span>,   <span class="c-cmt">// acesso com ponto</span>
+           a.nome, a.classe, a.nivel, a.xp);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Definir a <code>struct Aventureiro</code> e criar um exemplar.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>A <code>struct</code> agrupa campos de tipos diferentes sob um nome.</li><li>Acesse cada campo com o operador ponto (<code>a.nivel</code>).</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="14">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#c093d6">
+          <span class="dia-num">DIA 14</span>
+          <span class="dia-data">31 · Sex</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#c093d6">Structs</span>
+            <span class="cap">Cap. 14 · A Ficha do Aventureiro</span>
+            
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Structs: registros</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Definir <code>struct Aventureiro</code> (nome, classe, nível, XP), preencher e imprimir a ficha.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>os quatro campos</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ficha formatada</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">Aria Bardo 13 820</code><span class="arr">→</span><code class="ex">Aria, Bardo Nv.13 (820 XP)</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Criar <code>void imprimirFicha(struct Aventureiro a)</code> e chamá-la.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>um struct</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ficha impressa</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Aninhar uma <code>struct Atributos</code> (força, magia) dentro de Aventureiro.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>campos + atributos</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ficha completa</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Uma ficha só? A forja tem <b>dezenas</b> de aventureiros para gerenciar…</span>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="15">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#c093d6">
+          <span class="dia-num">DIA 15</span>
+          <span class="dia-data">01 · Sáb</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#c093d6">Structs</span>
+            <span class="cap">Cap. 15 · A Forja Completa</span>
+            <span class="flag flag-final">✦ Integrador Final</span>
+            <span class="parte">Parte 1 · o modelo</span>
+          </div>
+          <h2 class="dia-topico">Vetor de structs: desafio integrador final</h2>
+        </div>
+      </div>
+      <div class="modelo-body">
+        <div class="code-col reveal">
+          <div class="code-topbar">
+            <span class="dots"><i></i><i></i><i></i></span>
+            <span class="code-title">modelo guiado · leia antes de escrever</span>
+            <span class="code-lang">forja.c</span>
+          </div>
+          <pre class="code"><code><span class="c-pp">#include &lt;stdio.h&gt;</span>
+<span class="c-pp">#define MAX 100</span>
+
+<span class="c-ty">struct</span> Aventureiro { <span class="c-ty">char</span> nome[<span class="c-num">50</span>]; <span class="c-ty">int</span> nivel, xp; };
+
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    <span class="c-ty">struct</span> Aventureiro forja[MAX];
+    <span class="c-ty">int</span> n;
+    <span class="c-fn">scanf</span>(<span class="c-str">&quot;%d&quot;</span>, &amp;n);                        <span class="c-cmt">// quantos herois</span>
+
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; n; i++)             <span class="c-cmt">// cadastro</span>
+        <span class="c-fn">scanf</span>(<span class="c-str">&quot;%49s %d %d&quot;</span>, forja[i].nome,
+              &amp;forja[i].nivel, &amp;forja[i].xp);
+
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">0</span>; i &lt; n; i++)             <span class="c-cmt">// listagem</span>
+        <span class="c-fn">printf</span>(<span class="c-str">&quot;%s Nv.%d - %d XP\n&quot;</span>, forja[i].nome,
+               forja[i].nivel, forja[i].xp);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</code></pre>
+        </div>
+        <div class="side-col">
+          <div class="block block-aq reveal">
+            <div class="block-label"><span class="dot"></span>Aquecimento <em>· retomada</em></div>
+            <p>Declarar um vetor de structs de tamanho <code>MAX</code>.</p>
+          </div>
+          <div class="block block-key reveal">
+            <div class="block-label"><span class="dot"></span>Pontos-chave <em>· o que observar</em></div>
+            <ul class="pontos"><li>Vetor de structs = várias fichas: <code>forja[i]</code> escolhe o herói.</li><li>O índice escolhe o aventureiro; o ponto escolhe o campo.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide slide-dia" data-unlock-day="15">
+      
+      <div class="dia-head">
+        <div class="dia-badge" style="--bcolor:#c093d6">
+          <span class="dia-num">DIA 15</span>
+          <span class="dia-data">01 · Sáb</span>
+        </div>
+        <div class="dia-titles">
+          <div class="dia-meta">
+            <span class="bloco-tag" style="--bcolor:#c093d6">Structs</span>
+            <span class="cap">Cap. 15 · A Forja Completa</span>
+            <span class="flag flag-final">✦ Integrador Final</span>
+            <span class="parte">Parte 2 · o desafio</span>
+          </div>
+          <h2 class="dia-topico">Vetor de structs: desafio integrador final</h2>
+        </div>
+      </div>
+      <div class="desafio-body">
+        <div class="desafio-label reveal">Desafio em níveis <em>· “você faz”: escolha até onde ir</em></div>
+        <div class="tiers reveal">
+      <div class="tier tier-bronze">
+        <div class="tier-top">
+          <span class="tier-name">Bronze</span>
+          <span class="tier-obj">Cadastrar N aventureiros num vetor de structs e listar todos.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>N e os campos de cada herói</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>listagem completa</span></div>
+        </div>
+        <div class="io-ex"><span class="io-k">Exemplo</span>
+                 <code class="ex">2 / Aria 13 820 / Kael 9 400</code><span class="arr">→</span><code class="ex">Aria Nv.13...  Kael Nv.9...</code></div>
+      </div>
+      <div class="tier tier-prata">
+        <div class="tier-top">
+          <span class="tier-name">Prata</span>
+          <span class="tier-obj">Buscar um herói por nome e permitir editar o seu XP.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>nome + novo XP</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>ficha atualizada</span></div>
+        </div>
+        
+      </div>
+      <div class="tier tier-ouro">
+        <div class="tier-top">
+          <span class="tier-name">Ouro</span>
+          <span class="tier-obj">Menu completo: cadastrar, listar, buscar e ordenar por XP: o sistema inteiro reunindo tudo.</span>
+        </div>
+        <div class="io-row">
+          <div class="io"><span class="io-k">Entrada</span><span>comandos do menu</span></div>
+          <div class="io"><span class="io-k">Saída</span><span>sistema em operação</span></div>
+        </div>
+        
+      </div></div>
+      </div>
+      <div class="gancho reveal">
+        <span class="gancho-icon">↳</span>
+        <span class="gancho-label">Gancho</span>
+        <span class="gancho-text">Não é um gancho, é a <b>chegada</b>. Toda a jornada converge aqui.</span>
+      </div>
+    </section>
+
+    <section class="slide close-slide" data-unlock-day="15">
+      <div class="eyebrow reveal">O truque que amarra tudo</div>
+      <h2 class="reveal">A refatoração <span>visível</span></h2>
+      <div class="close-steps reveal">
+        <span class="cstep">Dia 8 · <b>vetores soltos</b><br>nomes[], xp[], niveis[]</span>
+        <span class="carrow">→</span>
+        <span class="cstep">Dia 14 · <b>struct</b><br>Aventureiro { … }</span>
+        <span class="carrow">→</span>
+        <span class="cstep">Dia 15 · <b>vetor de structs</b><br>a forja inteira</span>
+      </div>
+      <p class="close-note reveal">A partir do Dia 12, o aluno <b>reescreve o próprio código</b> das semanas anteriores. Quando ele vê o seu código de duas semanas atrás melhorar, a evolução deixa de ser abstrata e fica palpável: o melhor argumento pedagógico para “por que structs existem”.</p>
+    </section>
+
+  </main>
+</div>
+
+<div class="counter" id="counter"><b>01</b> / 36</div>
+<div class="hint">← → navegar · E editar</div>
+
+<script>
+
+/* ====== LIBERAÇÃO PROGRESSIVA POR DATA ====== */
+/* AJUSTE AQUI a data real do DIA 1 (formato AAAA-MM-DD). A agenda pula domingos. */
+const DATA_INICIO_DIA1 = "2026-07-16";
+/* Abra a apresentação com ?preview no fim da URL para liberar TUDO (uso do professor). */
+const MODO_PREVIEW = new URLSearchParams(location.search).has('preview');
+
+function _parseISO(s){ const p=s.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
+function _hoje(){ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function _fmt(d){ return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2); }
+
+/* gera as 15 datas pulando domingos (getDay()===0) */
+function _datasDosDias(iso){
+  const out=[]; let cur=_parseISO(iso);
+  while(out.length<15){ if(cur.getDay()!==0) out.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+  return out;
+}
+const DATAS_DIAS = _datasDosDias(DATA_INICIO_DIA1);
+const HOJE = _hoje();
+let DIAS_LIBERADOS = 0;
+for(let i=0;i<DATAS_DIAS.length;i++){ if(DATAS_DIAS[i] <= HOJE) DIAS_LIBERADOS = i+1; }
+if(MODO_PREVIEW) DIAS_LIBERADOS = 15;
+function _diaLiberado(n){ return n===0 || n<=DIAS_LIBERADOS; }
+
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.current = 0;
+    this.stage = document.getElementById('deckStage');
+    this.bar = document.getElementById('progressBar');
+    this.counter = document.getElementById('counter');
+    this.setupScale(); this.setupKeys(); this.setupTouch(); this.setupWheel(); this.setupLocks(); this.show(0);
+  }
+  setupLocks() {
+    this.maxIndex = this.slides.length - 1;
+    let primeiroBloqueado = -1;
+    this.slides.forEach((s, idx) => {
+      const dia = parseInt(s.getAttribute('data-unlock-day') || '0', 10);
+      if (!_diaLiberado(dia)) {
+        if (primeiroBloqueado === -1) primeiroBloqueado = idx;
+        // monta a tela de cadeado com a data de liberação
+        const data = DATAS_DIAS[dia-1];
+        const dias = Math.max(0, Math.ceil((data - HOJE) / 86400000));
+        const falta = dias === 0 ? 'abre ainda hoje' : (dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias');
+        const cover = document.createElement('div');
+        cover.className = 'lock-cover';
+        cover.innerHTML =
+          '<div class="lk-ico">\uD83D\uDD12</div>' +
+          '<div class="lk-sub">Desafio bloqueado</div>' +
+          '<div class="lk-dia">Dia ' + dia + '</div>' +
+          '<div class="lk-rule"></div>' +
+          '<div class="lk-msg">Libera em</div>' +
+          '<div class="lk-date">' + _fmt(data) + '</div>' +
+          '<div class="lk-sub">' + falta + '</div>';
+        s.appendChild(cover);
+      }
+    });
+    // permite chegar ATÉ o primeiro slide bloqueado (para ver o cadeado), e não além
+    if (primeiroBloqueado !== -1) this.maxIndex = primeiroBloqueado;
+  }
+  setupScale() {
+    const s = () => { const f=Math.min(innerWidth/1920, innerHeight/1080);
+      this.stage.style.transform=`translate(${(innerWidth-1920*f)/2}px, ${(innerHeight-1080*f)/2}px) scale(${f})`; };
+    s(); addEventListener('resize', s);
+  }
+  setupKeys() {
+    addEventListener('keydown', e => {
+      if (e.target.getAttribute && e.target.getAttribute('contenteditable')==='true') return;
+      if (['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)) { e.preventDefault(); this.next(); }
+      else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); this.prev(); }
+      else if (e.key==='Home') this.show(0);
+      else if (e.key==='End') this.show(this.slides.length-1);
+    });
+  }
+  setupTouch() {
+    let x0=null;
+    this.stage.addEventListener('touchstart', e=>x0=e.touches[0].clientX, {passive:true});
+    this.stage.addEventListener('touchend', e=>{ if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>60)(dx<0?this.next():this.prev()); x0=null; }, {passive:true});
+  }
+  setupWheel() {
+    let lock=false;
+    addEventListener('wheel', e=>{ if(lock||Math.abs(e.deltaY)<24)return;
+      lock=true; setTimeout(()=>lock=false,620); (e.deltaY>0?this.next():this.prev()); }, {passive:true});
+  }
+  next(){ this.show(this.current+1); }
+  prev(){ this.show(this.current-1); }
+  show(i) {
+    this.current=Math.max(0,Math.min(i,this.maxIndex));
+    this.slides.forEach((s,idx)=>{ s.classList.toggle('active',idx===this.current); s.classList.toggle('visible',idx===this.current); });
+    this.bar.style.width=(this.current/(this.slides.length-1)*100)+'%';
+    this.counter.innerHTML='<b>'+String(this.current+1).padStart(2,'0')+'</b> / '+this.slides.length;
+  }
+}
+const pres = new SlidePresentation();
+
+const editor = { isActive:false,
+  toggleEditMode() { this.isActive=!this.isActive;
+    document.getElementById('editToggle').classList.toggle('active', this.isActive);
+    document.querySelectorAll('.slide h1,.slide h2,.slide h3,.slide p,.slide td,.tier-obj,.tier-name,.cap,.gancho-text,.pontos li,.io span,.dia-topico').forEach(el=>el.setAttribute('contenteditable', this.isActive?'true':'false'));
+  } };
+document.getElementById('editToggle').addEventListener('click', ()=>editor.toggleEditMode());
+const hz=document.querySelector('.edit-hotzone'), et=document.getElementById('editToggle'); let ht=null;
+hz.addEventListener('mouseenter', ()=>{ clearTimeout(ht); et.classList.add('show'); });
+hz.addEventListener('mouseleave', ()=>{ ht=setTimeout(()=>{ if(!editor.isActive) et.classList.remove('show'); },400); });
+et.addEventListener('mouseenter', ()=>clearTimeout(ht));
+et.addEventListener('mouseleave', ()=>{ ht=setTimeout(()=>{ if(!editor.isActive) et.classList.remove('show'); },400); });
+hz.addEventListener('click', ()=>editor.toggleEditMode());
+addEventListener('keydown', e=>{ if((e.key==='e'||e.key==='E') && !(e.target.getAttribute && e.target.getAttribute('contenteditable')==='true')) editor.toggleEditMode(); });
+</script>
+</body>
+</html>
