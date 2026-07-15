@@ -207,6 +207,17 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
 .edit-toggle.show, .edit-toggle.active { opacity:1; pointer-events:auto; }
 .edit-toggle.active { background:var(--gold); color:#100c07; }
 [contenteditable="true"] { outline:2px dashed rgba(232,191,82,.5); outline-offset:4px; border-radius:3px; }
+
+/* ---------- LIBERAÇÃO PROGRESSIVA (tela de cadeado) ---------- */
+.lock-cover { position:absolute; inset:0; z-index:60; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:100px; gap:14px;
+  background:radial-gradient(1100px 760px at 50% 42%, rgba(18,24,38,.965), rgba(9,11,18,.99)); }
+.lock-cover .lk-ico { font-size:132px; line-height:1; filter:drop-shadow(0 6px 30px rgba(244,122,31,.35)); }
+.lock-cover .lk-sub { font-family:var(--font-mono); font-size:22px; letter-spacing:6px; text-transform:uppercase; color:var(--ink-mute); }
+.lock-cover .lk-dia { font-family:var(--font-disp); font-weight:800; font-size:88px; color:var(--gold); line-height:1; margin:6px 0; }
+.lock-cover .lk-msg { font-family:var(--font-body); font-size:34px; color:var(--ink-soft); }
+.lock-cover .lk-date { font-family:var(--font-mono); font-size:44px; color:var(--ember); font-weight:600; margin-top:2px; }
+.lock-cover .lk-rule { width:120px; height:4px; background:linear-gradient(90deg,var(--ember),var(--gold)); border-radius:2px; margin:20px 0 6px; }
 </style>
 </head>
 <body>
@@ -217,7 +228,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
 <div class="deck-viewport">
   <main class="deck-stage" id="deckStage">
 
-    <section class="slide title-slide active">
+    <section class="slide title-slide active" data-unlock-day="0">
       <div class="title-kicker reveal">Desafio de Férias · 15 dias</div>
       <h1 class="reveal">A Saga dos<br><span class="amp">Guerreiros Z</span></h1>
       <div class="title-rule reveal"></div>
@@ -229,7 +240,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
       </div>
     </section>
 
-    <section class="slide slide-std">
+    <section class="slide slide-std" data-unlock-day="0">
       <div class="eyebrow reveal">A Metodologia</div>
       <h2 class="reveal">Três cadências que trabalham juntas</h2>
       <p class="lede reveal">Os 15 dias não são 15 exercícios soltos: são uma coisa só que <b>evolui</b>. A progressão vem de três camadas simultâneas.</p>
@@ -240,7 +251,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
       </div>
     </section>
 
-    <section class="slide slide-std">
+    <section class="slide slide-std" data-unlock-day="0">
       <div class="eyebrow reveal">Cadência 01 · O ritmo diário</div>
       <h2 class="reveal">Quatro tempos, todos os dias</h2>
       <p class="lede reveal">O esqueleto que se repete e emenda um dia no outro. Cada dia tem duas telas: o <b>modelo</b> e o <b>desafio</b>.</p>
@@ -252,7 +263,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
       </div>
     </section>
 
-    <section class="slide slide-std">
+    <section class="slide slide-std" data-unlock-day="0">
       <div class="eyebrow reveal">Cadência 02 · Os três degraus</div>
       <h2 class="reveal">Base, Kaioken e Super Saiyajin</h2>
       <p class="lede reveal">Cada desafio sobe em três degraus: ninguém fica parado, ninguém fica sem teto.</p>
@@ -263,7 +274,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
       </div>
     </section>
 
-    <section class="slide slide-std slide-mapa">
+    <section class="slide slide-std slide-mapa" data-unlock-day="0">
       <div class="eyebrow reveal">Cadência 03 · O fio condutor</div>
       <h2 class="reveal">O mapa da jornada</h2>
       <p class="lede reveal">Uma única equipe, a Equipe Z, cresce a cada dia, usando exatamente o conteúdo daquele dia.</p>
@@ -295,7 +306,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
     </section>
 
     
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="1">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0803c">
@@ -346,7 +357,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="1">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0803c">
@@ -407,7 +418,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">E se, em vez de só “entra / não entra”, existissem <b>três faixas</b> de poder?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="2">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0803c">
@@ -461,7 +472,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="2">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0803c">
@@ -522,7 +533,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Muitos <code>if</code> encadeados cansam. Existe uma forma de <b>menu</b> mais limpa?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="3">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0803c">
@@ -575,7 +586,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="3">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0803c">
@@ -636,7 +647,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">O menu roda <b>uma vez só</b>. E se precisasse repetir até o usuário sair?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="4">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -688,7 +699,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="4">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -749,7 +760,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">E quando o bloco precisar rodar <b>ao menos uma vez</b> antes de testar a condição?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="5">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -800,7 +811,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="5">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -861,7 +872,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">E se soubéssemos <b>de antemão</b> quantos guerreiros processar?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="6">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -913,7 +924,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="6">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -974,7 +985,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">E se <b>cada guerreiro</b> tivesse que enfrentar <b>todos os outros</b>?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="7">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -1024,7 +1035,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="7">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#e0b23c">
@@ -1085,7 +1096,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Guardar o ki de <b>todos</b> os guerreiros… uma variável para cada? Há algo melhor.</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="8">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1138,7 +1149,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="8">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1199,7 +1210,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Com todo o ki guardado… como achar o <b>campeão</b> e a <b>média</b>?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="9">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1252,7 +1263,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="9">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1313,7 +1324,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">E se cada guerreiro tivesse <b>vários atributos</b>, em linhas e colunas?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="10">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1365,7 +1376,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="10">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1426,7 +1437,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Ainda faltam os <b>nomes</b> dos guerreiros, e nomes são <b>texto</b>…</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="11">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1479,7 +1490,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="11">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7bbf8a">
@@ -1540,7 +1551,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Seu <code>main()</code> está gigante. Como organizar em <b>blocos reutilizáveis</b>?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="12">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7ba6d6">
@@ -1594,7 +1605,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="12">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7ba6d6">
@@ -1655,7 +1666,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Como uma função consegue <b>alterar</b> o guerreiro (subir de nível) de verdade?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="13">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7ba6d6">
@@ -1711,7 +1722,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="13">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#7ba6d6">
@@ -1772,7 +1783,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Nome, nível, ki, raça… soltos. E se tudo isso fosse <b>um só</b> guerreiro?</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="14">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#c093d6">
@@ -1824,7 +1835,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="14">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#c093d6">
@@ -1885,7 +1896,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         <span class="gancho-text">Uma ficha só? A Equipe Z tem <b>dezenas</b> de guerreiros para gerenciar…</span>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="15">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#c093d6">
@@ -1941,7 +1952,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
         </div>
       </div>
     </section>
-    <section class="slide slide-dia">
+    <section class="slide slide-dia" data-unlock-day="15">
       
       <div class="dia-head">
         <div class="dia-badge" style="--bcolor:#c093d6">
@@ -2003,7 +2014,7 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
       </div>
     </section>
 
-    <section class="slide close-slide">
+    <section class="slide close-slide" data-unlock-day="15">
       <div class="eyebrow reveal">O truque que amarra tudo</div>
       <h2 class="reveal">A refatoração <span>visível</span></h2>
       <div class="close-steps reveal">
@@ -2023,6 +2034,30 @@ code.ex { background:rgba(0,0,0,.28); padding:5px 12px; border-radius:6px; color
 <div class="hint">← → navegar · E editar</div>
 
 <script>
+
+/* ====== LIBERAÇÃO PROGRESSIVA POR DATA ====== */
+/* AJUSTE AQUI a data real do DIA 1 (formato AAAA-MM-DD). A agenda pula domingos. */
+const DATA_INICIO_DIA1 = "2026-07-16";
+/* Abra a apresentação com ?preview no fim da URL para liberar TUDO (uso do professor). */
+const MODO_PREVIEW = new URLSearchParams(location.search).has('preview');
+
+function _parseISO(s){ const p=s.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
+function _hoje(){ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function _fmt(d){ return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2); }
+
+/* gera as 15 datas pulando domingos (getDay()===0) */
+function _datasDosDias(iso){
+  const out=[]; let cur=_parseISO(iso);
+  while(out.length<15){ if(cur.getDay()!==0) out.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+  return out;
+}
+const DATAS_DIAS = _datasDosDias(DATA_INICIO_DIA1);
+const HOJE = _hoje();
+let DIAS_LIBERADOS = 0;
+for(let i=0;i<DATAS_DIAS.length;i++){ if(DATAS_DIAS[i] <= HOJE) DIAS_LIBERADOS = i+1; }
+if(MODO_PREVIEW) DIAS_LIBERADOS = 15;
+function _diaLiberado(n){ return n===0 || n<=DIAS_LIBERADOS; }
+
 class SlidePresentation {
   constructor() {
     this.slides = Array.from(document.querySelectorAll('.slide'));
@@ -2030,7 +2065,34 @@ class SlidePresentation {
     this.stage = document.getElementById('deckStage');
     this.bar = document.getElementById('progressBar');
     this.counter = document.getElementById('counter');
-    this.setupScale(); this.setupKeys(); this.setupTouch(); this.setupWheel(); this.show(0);
+    this.setupScale(); this.setupKeys(); this.setupTouch(); this.setupWheel(); this.setupLocks(); this.show(0);
+  }
+  setupLocks() {
+    this.maxIndex = this.slides.length - 1;
+    let primeiroBloqueado = -1;
+    this.slides.forEach((s, idx) => {
+      const dia = parseInt(s.getAttribute('data-unlock-day') || '0', 10);
+      if (!_diaLiberado(dia)) {
+        if (primeiroBloqueado === -1) primeiroBloqueado = idx;
+        // monta a tela de cadeado com a data de liberação
+        const data = DATAS_DIAS[dia-1];
+        const dias = Math.max(0, Math.ceil((data - HOJE) / 86400000));
+        const falta = dias === 0 ? 'abre ainda hoje' : (dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias');
+        const cover = document.createElement('div');
+        cover.className = 'lock-cover';
+        cover.innerHTML =
+          '<div class="lk-ico">\uD83D\uDD12</div>' +
+          '<div class="lk-sub">Desafio bloqueado</div>' +
+          '<div class="lk-dia">Dia ' + dia + '</div>' +
+          '<div class="lk-rule"></div>' +
+          '<div class="lk-msg">Libera em</div>' +
+          '<div class="lk-date">' + _fmt(data) + '</div>' +
+          '<div class="lk-sub">' + falta + '</div>';
+        s.appendChild(cover);
+      }
+    });
+    // permite chegar ATÉ o primeiro slide bloqueado (para ver o cadeado), e não além
+    if (primeiroBloqueado !== -1) this.maxIndex = primeiroBloqueado;
   }
   setupScale() {
     const s = () => { const f=Math.min(innerWidth/1920, innerHeight/1080);
@@ -2060,7 +2122,7 @@ class SlidePresentation {
   next(){ this.show(this.current+1); }
   prev(){ this.show(this.current-1); }
   show(i) {
-    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.current=Math.max(0,Math.min(i,this.maxIndex));
     this.slides.forEach((s,idx)=>{ s.classList.toggle('active',idx===this.current); s.classList.toggle('visible',idx===this.current); });
     this.bar.style.width=(this.current/(this.slides.length-1)*100)+'%';
     this.counter.innerHTML='<b>'+String(this.current+1).padStart(2,'0')+'</b> / '+this.slides.length;
